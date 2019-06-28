@@ -372,7 +372,7 @@ public class Patcher
 		if (!backupFile.exists() && !backupFile(file, backupFile))
 				return false;
 		
-		Document document = readBrowserHtml(file);
+		Document document = readBrowserHtml(backupFile);
 
 		if (document != null)
 		{
@@ -381,17 +381,23 @@ public class Patcher
 			
 			for (String styleFile : styleFiles)
 			{
-				Element element = document.createElement("link");
-				element.attr("rel", "stylesheet");
-				element.attr("href", styleFile);
-				head.appendChild(element);
+				if (head.getElementsByAttributeValue("href", styleFile).isEmpty())
+				{
+					Element element = document.createElement("link");
+					element.attr("rel", "stylesheet");
+					element.attr("href", styleFile);
+					head.appendChild(element);
+				}
 			}
 			
 			for (String scriptFile : scriptFiles)
 			{
-				Element element = document.createElement("script");
-				element.attr("src", scriptFile);
-				body.appendChild(element);
+				if (body.getElementsByAttributeValue("href", scriptFile).isEmpty())
+				{
+					Element element = document.createElement("script");
+					element.attr("src", scriptFile);
+					body.appendChild(element);
+				}
 			}
 			
 			return saveToFile(document, file);
