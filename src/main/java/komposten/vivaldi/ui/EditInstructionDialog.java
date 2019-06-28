@@ -23,12 +23,15 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Window;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -39,6 +42,8 @@ import komposten.utilities.logging.Level;
 import komposten.utilities.logging.LogUtils;
 import komposten.vivaldi.backend.Instruction;
 import komposten.vivaldi.util.DirectoryUtils;
+import komposten.vivaldi.util.Strings;
+import komposten.vivaldi.util.Utilities;
 
 
 public class EditInstructionDialog extends JDialog
@@ -52,6 +57,7 @@ public class EditInstructionDialog extends JDialog
 	private JLabel labelTarget;
 	private BrowseTextField fieldMod;
 	private BrowseTextField fieldTarget;
+	private JCheckBox checkExcludeFromBrowser;
 	private JButton buttonOk;
 	private JButton buttonCancel;
 	private File modDir;
@@ -69,12 +75,16 @@ public class EditInstructionDialog extends JDialog
 		labelTarget = new JLabel("Target directory:");
 		fieldMod = new BrowseTextField("Choose a mod file", JFileChooser.FILES_ONLY, false, null);
 		fieldTarget = new BrowseTextField("Choose a target directory", JFileChooser.DIRECTORIES_ONLY, false, null);
+		checkExcludeFromBrowser = new JCheckBox("Exclude from browser.html");
 		buttonOk = new JButton("Ok");
 		buttonCancel = new JButton("Cancel");
+		
+		checkExcludeFromBrowser.setToolTipText(Strings.EDIT_INSTRUCTION_EXCLUDE_TOOLTIP);
 		
 		fieldTarget.setPreferredSize(new Dimension(340, fieldTarget.getPreferredSize().height));
 		
 		fieldMod.setBrowseListener(file -> setRelativePath(fieldMod, file, modDir));
+		fieldMod.getTextfield().addFocusListener(focusListener);
 		fieldTarget.setBrowseListener(file -> setRelativePath(fieldTarget, file, vivaldiDir));
 		buttonOk.addActionListener(action -> close(true));
 		buttonCancel.addActionListener(action -> close(false));
@@ -106,6 +116,11 @@ public class EditInstructionDialog extends JDialog
 		constraints.gridy++;
 		constraints.weightx = 0;
 		constraints.gridwidth = 2;
+		add(checkExcludeFromBrowser, constraints);
+		constraints.gridx = 0;
+		constraints.gridy++;
+		constraints.weightx = 0;
+		constraints.gridwidth = 2;
 		constraints.fill = GridBagConstraints.BOTH;
 		add(panelButtons, constraints);
 		
@@ -118,8 +133,9 @@ public class EditInstructionDialog extends JDialog
 	{
 		String modFile = fieldMod.getTextfield().getText();
 		String targetDir = fieldTarget.getTextfield().getText();
+		boolean exclude = (checkExcludeFromBrowser.isEnabled() ? checkExcludeFromBrowser.isSelected() : false);
 		
-		return new Instruction(modFile, targetDir);
+		return new Instruction(modFile, targetDir, exclude);
 	}
 	
 	
@@ -132,14 +148,18 @@ public class EditInstructionDialog extends JDialog
 		{
 			fieldMod.getTextfield().setText("");
 			fieldTarget.getTextfield().setText("");
+			checkExcludeFromBrowser.setSelected(false);
 			setTitle("Add new instruction");
 		}
 		else
 		{
 			fieldMod.getTextfield().setText(instruction.sourceFile.replace('\\', '/'));
 			fieldTarget.getTextfield().setText(instruction.targetDirectory.replace('\\', '/'));
+			checkExcludeFromBrowser.setSelected(instruction.excludeFromBrowserHtml);
 			setTitle("Edit instruction");
 		}
+		
+		updateCheckExcludeState();
 		
 		fieldMod.setCurrentDirectory(this.modDir);
 		fieldTarget.setCurrentDirectory(this.vivaldiDir);
@@ -152,6 +172,14 @@ public class EditInstructionDialog extends JDialog
 	}
 	
 	
+	private void updateCheckExcludeState()
+	{
+		String modFile = fieldMod.getTextfield().getText();
+
+		checkExcludeFromBrowser.setEnabled(Utilities.isStyle(modFile) || Utilities.isScript(modFile));
+	}
+
+
 	private File findVersionDir(File vivaldiDir)
 	{
 		File[] versionFolders = vivaldiDir.listFiles(DirectoryUtils.vivaldiVersionFolderFilter);
@@ -262,4 +290,21 @@ public class EditInstructionDialog extends JDialog
 			setVisible(false);
 		}
 	}
+	
+	
+	private FocusListener focusListener = new FocusListener()
+	{
+		@Override
+		public void focusLost(FocusEvent e)
+		{
+			updateCheckExcludeState();
+		}
+		
+		
+		@Override
+		public void focusGained(FocusEvent e)
+		{
+			//Not necessary.
+		}
+	};
 }

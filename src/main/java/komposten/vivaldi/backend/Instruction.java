@@ -25,12 +25,14 @@ public class Instruction implements Comparable<Instruction>
 {
 	public final String sourceFile;
 	public final String targetDirectory;
+	public final boolean excludeFromBrowserHtml;
 
 
-	public Instruction(String source, String target)
+	public Instruction(String source, String target, boolean excludeFromBrowserHtml)
 	{
 		this.sourceFile = source;
 		this.targetDirectory = target;
+		this.excludeFromBrowserHtml = excludeFromBrowserHtml;
 	}
 	
 	
@@ -38,13 +40,14 @@ public class Instruction implements Comparable<Instruction>
 	{
 		this.sourceFile = copyFrom.sourceFile;
 		this.targetDirectory = copyFrom.targetDirectory;
+		this.excludeFromBrowserHtml = copyFrom.excludeFromBrowserHtml;
 	}
 
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(sourceFile, targetDirectory);
+		return Objects.hash(sourceFile, targetDirectory, excludeFromBrowserHtml);
 	}
 
 
@@ -71,6 +74,8 @@ public class Instruction implements Comparable<Instruction>
 				return false;
 		}
 		else if (!targetDirectory.equals(other.targetDirectory))
+			return false;
+		if (excludeFromBrowserHtml != other.excludeFromBrowserHtml)
 			return false;
 		return true;
 	}

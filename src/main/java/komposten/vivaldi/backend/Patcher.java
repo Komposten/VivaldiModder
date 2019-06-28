@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,12 +31,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
 import komposten.utilities.data.ObjectPair;
 import komposten.utilities.logging.Level;
 import komposten.utilities.logging.LogUtils;
 import komposten.utilities.logging.Logger;
 import komposten.utilities.tools.FileOperations;
 import komposten.vivaldi.util.DirectoryUtils;
+import komposten.vivaldi.util.Utilities;
 
 
 public class Patcher
@@ -200,8 +206,7 @@ public class Patcher
 		savePatchedVersions();
 	}
 
-
-	//NEXT_TASK If there is no browser.html instruction, add all .js and .css files to the existing browser.html (after backup)!
+	
 	private boolean applyMods(File versionDir, File vivaldiDir, boolean patchAll)
 	{
 		for (PatchProgressListener listener : listeners)
@@ -219,66 +224,222 @@ public class Patcher
 			logger.log(Level.INFO,
 					String.format("Patching version %s...", versionDir.getName()));
 
+			boolean hasBrowserHtmlInstruction = false;
 			for (Instruction instruction : modConfig.getInstructions())
 			{
-				notifyNextModFile(instruction);
-				File sourceFile = new File(modConfig.getModDir(), instruction.sourceFile);
-				File targetDir = new File(versionDir, instruction.targetDirectory);
-				File targetFile = new File(targetDir, sourceFile.getName());
-				File backupFile = new File(targetDir, sourceFile.getName() + ".bak");
-
-				boolean canCopy = true;
-				if (targetFile.exists() && !backupFile.exists())
-				{
-					try
-					{
-						logger.log(Level.INFO,
-								String.format("Backing up %s...", getAbsolutePath(targetFile)));
-						canCopy = FileOperations.copyFile(targetFile, backupFile);
-					}
-					catch (IOException e)
-					{
-						String message = String.format(
-								"Could not back up %s, so it will not be replaced: %s",
-								targetFile.getName(), e.getMessage());
-						logger.log(Level.WARNING, message);
-						success = false;
-						canCopy = false;
-					}
-				}
-
-				if (canCopy)
-				{
-					try
-					{
-						if (!sourceFile.exists())
-							throw new FileNotFoundException(
-									String.format("%s does not exist!", sourceFile.getPath()));
-						if (!sourceFile.isFile())
-							throw new IOException(
-									String.format("%s is not a file!", sourceFile.getPath()));
-						FileOperations.copyFile(sourceFile, targetFile);
-					}
-					catch (IOException e)
-					{
-						String message = String.format("Could not copy %s: %s", sourceFile.getName(),
-								e.getMessage());
-						logger.log(Level.WARNING, message);
-						success = false;
-					}
-				}
+				if (!executeInstruction(versionDir, instruction))
+					success = false;
+				
+				if (instruction.sourceFile.endsWith("browser.html"))
+					hasBrowserHtmlInstruction = true;
+			}
+			
+			if (!hasBrowserHtmlInstruction)
+			{
+				if (!generateBrowserHtmlFile(versionDir))
+					success = false;
 			}
 		}
 
 		return success;
 	}
-	
-	
+
+
 	private boolean hasBeenPatchedPreviously(File vivaldiDir, File versionDir)
 	{
 		List<String> previouslyPatched = this.patchedVersions.get(getAbsolutePath(vivaldiDir));
 		
 		return previouslyPatched != null && previouslyPatched.contains(versionDir.getName());
+	}
+
+
+	private boolean executeInstruction(File versionDir, Instruction instruction)
+	{
+		notifyNextModFile(instruction);
+		File sourceFile = new File(modConfig.getModDir(), instruction.sourceFile);
+		File targetDir = new File(versionDir, instruction.targetDirectory);
+		File targetFile = new File(targetDir, sourceFile.getName());
+		File backupFile = new File(targetDir, sourceFile.getName() + ".bak");
+
+		boolean hasBackup = true;
+		
+		if (targetFile.exists() && !backupFile.exists())
+			hasBackup = backupFile(targetFile, backupFile);
+
+		if (hasBackup)
+			return copyModFile(sourceFile, targetFile);
+		else
+			return false;
+	}
+
+
+	private boolean backupFile(File file, File backupFile)
+	{
+		try
+		{
+			logger.log(Level.INFO,
+					String.format("Backing up %s...", getAbsolutePath(file)));
+			return FileOperations.copyFile(file, backupFile);
+		}
+		catch (IOException e)
+		{
+			String message = String.format(
+					"Could not back up %s, so it will not be replaced: %s",
+					file.getName(), e.getMessage());
+			logger.log(Level.WARNING, message);
+			
+			return false;
+		}
+	}
+
+
+	private boolean copyModFile(File sourceFile, File targetFile)
+	{
+		try
+		{
+			if (!sourceFile.exists())
+				throw new FileNotFoundException(
+						String.format("%s does not exist!", sourceFile.getPath()));
+			if (!sourceFile.isFile())
+				throw new IOException(
+						String.format("%s is not a file!", sourceFile.getPath()));
+			
+			FileOperations.copyFile(sourceFile, targetFile);
+		}
+		catch (IOException e)
+		{
+			String message = String.format("Could not copy %s: %s", sourceFile.getName(),
+					e.getMessage());
+			logger.log(Level.WARNING, message);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	private boolean generateBrowserHtmlFile(File versionDir)
+	{
+		List<String> styleFiles = new ArrayList<>();
+		List<String> scriptFiles = new ArrayList<>();
+
+		Path pathBrowser = new File(versionDir, "resources/vivaldi/").toPath();
+		
+		for (Instruction instruction : modConfig.getInstructions())
+		{
+			if (!instruction.excludeFromBrowserHtml)
+			{
+				if (Utilities.isScript(instruction.sourceFile))
+				{
+					Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
+					scriptFiles.add(relative.toString());
+				}
+				else if (Utilities.isStyle(instruction.sourceFile))
+				{
+					Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
+					styleFiles.add(relative.toString());
+				}
+			}
+		}
+		
+		return addStylesAndScripts(pathBrowser.resolve("browser.html").toFile(), styleFiles, scriptFiles);
+	}
+
+
+	private Path getPathRelativeToBrowser(File versionDir, Path pathBrowser,
+			Instruction instruction)
+	{
+		File source = new File(instruction.sourceFile);
+		File targetDir = new File(versionDir, instruction.targetDirectory);
+		Path pathTarget = new File(targetDir, source.getName()).toPath();
+		
+		return pathBrowser.relativize(pathTarget);
+	}
+
+
+	private boolean addStylesAndScripts(File file, List<String> styleFiles,
+			List<String> scriptFiles)
+	{
+		if (styleFiles.isEmpty() && scriptFiles.isEmpty())
+			return true;
+		
+		File backupFile = new File(file.getParentFile(), "browser.html.bak");
+		
+		if (!backupFile.exists() && !backupFile(file, backupFile))
+				return false;
+		
+		Document document = readBrowserHtml(backupFile);
+
+		if (document != null)
+		{
+			Element head = document.selectFirst("head");
+			Element body = document.selectFirst("body");
+			
+			for (String styleFile : styleFiles)
+			{
+				if (head.getElementsByAttributeValue("href", styleFile).isEmpty())
+				{
+					Element element = document.createElement("link");
+					element.attr("rel", "stylesheet");
+					element.attr("href", styleFile);
+					head.appendChild(element);
+				}
+			}
+			
+			for (String scriptFile : scriptFiles)
+			{
+				if (body.getElementsByAttributeValue("href", scriptFile).isEmpty())
+				{
+					Element element = document.createElement("script");
+					element.attr("src", scriptFile);
+					body.appendChild(element);
+				}
+			}
+			
+			return saveToFile(document, file);
+		}
+		
+		return false;
+	}
+
+
+	private Document readBrowserHtml(File file)
+	{
+		Document document = null;
+		
+		try
+		{
+			document = Jsoup.parse(file, null);
+		}
+		catch (IOException e)
+		{
+			String message = String.format(
+					"Could not read %s: %s", file, e.getMessage());
+			logger.log(Level.WARNING, message);
+		}
+		
+		return document;
+	}
+
+
+	private boolean saveToFile(Document document, File file)
+	{
+		try
+		{
+			FileOperations fops = new FileOperations();
+			fops.createWriter(file, false);
+			fops.printData(document.html(), false);
+			fops.closeWriter();
+			return true;
+		}
+		catch (IOException e)
+		{
+			String message = String.format(
+					"Could not save the modified %s: %s", file, e.getMessage());
+			logger.log(Level.WARNING, message);
+
+			return false;
+		}
 	}
 
 

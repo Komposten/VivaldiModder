@@ -36,9 +36,13 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import komposten.vivaldi.backend.Instruction;
+import komposten.vivaldi.util.Strings;
+import komposten.vivaldi.util.Utilities;
 
 
 public class InstructionTable extends JTable
@@ -52,6 +56,8 @@ public class InstructionTable extends JTable
 	private static final int COL_SOURCE = 0;
 	private static final int COL_ARROW = 1;
 	private static final int COL_TARGET = 2;
+	private static final int COL_INCLUDE = 3;
+	private static final int COL_COUNT = 4;
 	private InstructionTableModel tableModel;
 	private InstructionClickListener clickListener;
 
@@ -62,7 +68,9 @@ public class InstructionTable extends JTable
 		tableModel = (InstructionTableModel) getModel();
 
 		InstructionCellRenderer cellRenderer = new InstructionCellRenderer();
+		InstructionHeaderRenderer headerRenderer = new InstructionHeaderRenderer(getTableHeader());
 		TableColumn colArrow = getColumnModel().getColumn(COL_ARROW);
+		TableColumn colInclude = getColumnModel().getColumn(COL_INCLUDE);
 		TableColumn colSource = getColumnModel().getColumn(COL_SOURCE);
 		TableColumn colTarget = getColumnModel().getColumn(COL_TARGET);
 
@@ -70,13 +78,18 @@ public class InstructionTable extends JTable
 		setIntercellSpacing(new Dimension(0, getRowMargin()));
 
 		getTableHeader().setReorderingAllowed(false);
-
+		
 		colSource.setCellRenderer(cellRenderer);
 		colArrow.setCellRenderer(cellRenderer);
 		colTarget.setCellRenderer(cellRenderer);
+		colInclude.setCellRenderer(cellRenderer);
+		colInclude.setHeaderRenderer(headerRenderer);
+		
 		setRowHeight(getRowHeight() + PADDING * 2);
 		colArrow.setMaxWidth(25);
 		colArrow.setMinWidth(25);
+		colInclude.setMaxWidth(90);
+		colInclude.setPreferredWidth(90);
 		
 		addMouseListener(new MouseAdapter()
 		{
@@ -223,7 +236,7 @@ public class InstructionTable extends JTable
 								+ result.substring(navUpIndex + 2);
 				}
 
-				return new Instruction(src, result);
+				return new Instruction(src, result, original.excludeFromBrowserHtml);
 		}
 		
 		
@@ -264,7 +277,7 @@ public class InstructionTable extends JTable
 		@Override
 		public int getColumnCount()
 		{
-			return 3;
+			return COL_COUNT;
 		}
 
 
@@ -277,6 +290,8 @@ public class InstructionTable extends JTable
 					return "Mod file";
 				case COL_TARGET :
 					return "Destination folder";
+				case COL_INCLUDE :
+					return "browser.html";
 				default :
 					return "";
 			}
@@ -286,17 +301,54 @@ public class InstructionTable extends JTable
 		@Override
 		public Object getValueAt(int rowIndex, int columnIndex)
 		{
-			if (columnIndex == 1)
+			if (columnIndex == COL_ARROW)
 				return ">>";
 
 			if (instructionPairs == null)
 				return "";
 
+			Instruction instruction = instructionPairs.get(rowIndex).modified;
+			
 			if (columnIndex == COL_SOURCE)
-				return instructionPairs.get(rowIndex).modified.sourceFile;
+				return instruction.sourceFile;
 			else if (columnIndex == COL_TARGET)
-				return instructionPairs.get(rowIndex).modified.targetDirectory;
+				return instruction.targetDirectory;
+			else if (columnIndex == COL_INCLUDE)
+			{
+				String file = instruction.sourceFile;
+				
+				if (Utilities.isScript(file) || Utilities.isStyle(file))
+					return instruction.excludeFromBrowserHtml ? 'x' : '\u2713';
+				else
+					return '-';
+			}
 			return null;
+		}
+	}
+	
+	
+	private class InstructionHeaderRenderer extends DefaultTableCellRenderer
+	{
+		private TableCellRenderer renderer;
+
+		public InstructionHeaderRenderer(JTableHeader header)
+		{
+			renderer = header.getDefaultRenderer();
+		}
+		
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value,
+				boolean isSelected, boolean hasFocus, int row, int column)
+		{
+			JLabel component = (JLabel) renderer.getTableCellRendererComponent(table, value,
+					isSelected, hasFocus, row, column);
+
+			if (column == COL_INCLUDE)
+			{
+				component.setToolTipText(Strings.INSTRUCTION_TABLE_INCLUDE_TOOLTIP);
+			}
+			
+			return component;
 		}
 	}
 
@@ -315,7 +367,7 @@ public class InstructionTable extends JTable
 			Border actualBorder = component.getBorder();
 			component.setBorder(new CompoundBorder(actualBorder, paddingBorder));
 
-			if (column == COL_ARROW)
+			if (column == COL_ARROW || column == COL_INCLUDE)
 			{
 				component.setHorizontalAlignment(SwingConstants.CENTER);
 			}
@@ -323,7 +375,7 @@ public class InstructionTable extends JTable
 			{
 				component.setHorizontalAlignment(SwingConstants.LEADING);
 			}
-
+			
 			return component;
 		}
 	}
