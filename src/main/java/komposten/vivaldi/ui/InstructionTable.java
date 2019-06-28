@@ -189,7 +189,9 @@ public class InstructionTable extends JTable
 			for (Instruction instruction : instructions)
 			{
 				int index = instructionList.indexOf(instruction);
+				
 				instructionPairs.remove(index);
+				instructionList.remove(index);
 			}
 			
 			listChanged();
