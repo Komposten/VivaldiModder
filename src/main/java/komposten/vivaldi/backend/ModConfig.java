@@ -275,7 +275,7 @@ public class ModConfig
 			fops.createWriter(configFile, false);
 			
 			fops.printData("mod.dir=" + modDir.getPath(), false);
-			fops.printData("\nVivaldi dir=" + arrayToString(vivaldiDirs), false);
+			fops.printData("\nvivaldi.dirs=" + arrayToString(vivaldiDirs), false);
 
 			StringBuilder builder = new StringBuilder();
 			for (Instruction instruction : instructions)
