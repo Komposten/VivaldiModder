@@ -41,8 +41,9 @@ import javax.swing.JPanel;
 import komposten.utilities.logging.Level;
 import komposten.utilities.logging.LogUtils;
 import komposten.vivaldi.backend.Instruction;
-import komposten.vivaldi.backend.Patcher;
 import komposten.vivaldi.util.DirectoryUtils;
+import komposten.vivaldi.util.Strings;
+import komposten.vivaldi.util.Utilities;
 
 
 public class EditInstructionDialog extends JDialog
@@ -78,12 +79,7 @@ public class EditInstructionDialog extends JDialog
 		buttonOk = new JButton("Ok");
 		buttonCancel = new JButton("Cancel");
 		
-		checkExcludeFromBrowser.setToolTipText(
-				"<html>"
-				+ "If this file should be excluded from the auto-generated browser.html.<br />"
-				+ "This only applies if there is no copy instruction for a browser.html file,<br />"
-				+ "in which case a new file will be generated to include mod scripts and styles)."
-				+ "</html>");
+		checkExcludeFromBrowser.setToolTipText(Strings.EDIT_INSTRUCTION_EXCLUDE_TOOLTIP);
 		
 		fieldTarget.setPreferredSize(new Dimension(340, fieldTarget.getPreferredSize().height));
 		
@@ -180,14 +176,7 @@ public class EditInstructionDialog extends JDialog
 	{
 		String modFile = fieldMod.getTextfield().getText();
 
-		boolean enable = false;
-		for (String extension : Patcher.STYLE_SCRIPT_EXTENSIONS)
-		{
-			if (modFile.toLowerCase().endsWith(extension))
-				enable = true;
-		}
-		
-		checkExcludeFromBrowser.setEnabled(enable);
+		checkExcludeFromBrowser.setEnabled(Utilities.isStyle(modFile) || Utilities.isScript(modFile));
 	}
 
 

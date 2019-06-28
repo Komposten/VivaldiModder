@@ -41,6 +41,7 @@ import komposten.utilities.logging.LogUtils;
 import komposten.utilities.logging.Logger;
 import komposten.utilities.tools.FileOperations;
 import komposten.vivaldi.util.DirectoryUtils;
+import komposten.vivaldi.util.Utilities;
 
 
 public class Patcher
@@ -64,11 +65,6 @@ public class Patcher
 
 		public void onPatchFinished();
 	}
-	
-	public static final String[] STYLE_SCRIPT_EXTENSIONS = {
-			".js",
-			".css"
-	};
 
 
 	private Collection<PatchProgressListener> listeners;
@@ -333,12 +329,12 @@ public class Patcher
 		{
 			if (!instruction.excludeFromBrowserHtml)
 			{
-				if (instruction.sourceFile.endsWith(".js"))
+				if (Utilities.isScript(instruction.sourceFile))
 				{
 					Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
 					scriptFiles.add(relative.toString());
 				}
-				else if (instruction.sourceFile.endsWith(".css"))
+				else if (Utilities.isStyle(instruction.sourceFile))
 				{
 					Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
 					styleFiles.add(relative.toString());
