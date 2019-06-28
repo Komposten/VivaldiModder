@@ -45,6 +45,7 @@ someImage.jpg>\resources\vivaldi\style
 
 ### Dependencies
 - [Komposten's Utilities](https://github.com/Komposten/Utilities)
+- [Jsoup](https://jsoup.org)
 
 ### License
 This program is free software as long as the terms of the GNU GPL v3 license (or later versions, at your option) are complied with. See [LICENSE](LICENSE) for the full license text.

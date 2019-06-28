@@ -31,20 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import komposten.utilities.data.ObjectPair;
 import komposten.utilities.logging.Level;
@@ -383,73 +372,72 @@ public class Patcher
 		if (!backupFile.exists() && !backupFile(file, backupFile))
 				return false;
 		
-		try
+		Document document = readBrowserHtml(file);
+
+		if (document != null)
 		{
-			DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-			docBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-			Document document = docBuilderFactory.newDocumentBuilder().parse(file);
-			
-			Node head = document.getElementsByTagName("head").item(0);
-			Node body = document.getElementsByTagName("body").item(0);
+			Element head = document.selectFirst("head");
+			Element body = document.selectFirst("body");
 			
 			for (String styleFile : styleFiles)
 			{
 				Element element = document.createElement("link");
-				element.setAttribute("rel", "stylesheet");
-				element.setAttribute("href", styleFile);
+				element.attr("rel", "stylesheet");
+				element.attr("href", styleFile);
 				head.appendChild(element);
 			}
 			
 			for (String scriptFile : scriptFiles)
 			{
 				Element element = document.createElement("script");
-				element.setAttribute("src", scriptFile);
+				element.attr("src", scriptFile);
 				body.appendChild(element);
 			}
 			
-			saveToFile(document, file);
+			return saveToFile(document, file);
 		}
-		catch (ParserConfigurationException | SAXException e)
+		
+		return false;
+	}
+
+
+	private Document readBrowserHtml(File file)
+	{
+		Document document = null;
+		
+		try
 		{
-			String message = String.format(
-					"Could not parse %s: %s", file, e.getMessage());
-			logger.log(Level.WARNING, message);
-			
-			return false;
+			document = Jsoup.parse(file, null);
 		}
 		catch (IOException e)
 		{
 			String message = String.format(
 					"Could not read %s: %s", file, e.getMessage());
 			logger.log(Level.WARNING, message);
-			
-			return false;
 		}
-		catch (TransformerException e)
+		
+		return document;
+	}
+
+
+	private boolean saveToFile(Document document, File file)
+	{
+		try
+		{
+			FileOperations fops = new FileOperations();
+			fops.createWriter(file, false);
+			fops.printData(document.html(), false);
+			fops.closeWriter();
+			return true;
+		}
+		catch (IOException e)
 		{
 			String message = String.format(
 					"Could not save the modified %s: %s", file, e.getMessage());
 			logger.log(Level.WARNING, message);
-			
+
 			return false;
 		}
-		
-		return true;
-	}
-
-
-	private void saveToFile(Document doc, File file) throws TransformerException
-	{
-		TransformerFactory transformerFactory = TransformerFactory.newInstance();
-		transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-		Transformer transformer = transformerFactory.newTransformer();
-		transformer.setOutputProperty(OutputKeys.METHOD, "html");
-		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-		DOMSource source = new DOMSource(doc);
-		StreamResult result = new StreamResult(file);
-		
-		transformer.transform(source, result);
 	}
 
 
