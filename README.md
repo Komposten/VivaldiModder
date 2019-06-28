@@ -8,6 +8,7 @@ VivaldiModder is a simple program for applying custom CSS and JavaScript modific
 - Simple user interface for selecting mod files and Vivaldi installation directories.
 - Patch multiple Vivaldi installations at once.
 - Automatic back-up of files before overwriting them.
+- Automatically add scripts and styles to browser.html (if you don't include a browser.html file in the files to copy).
 
 ### Running VivaldiModder
 **Operating system support**
@@ -41,6 +42,9 @@ vivaldi.dirs="C:\path\to\Vivaldi\Application","C:\path\to\another\Vivaldi\Applic
 someStyle.css>\resources\vivaldi\style
 someScript.js>\resources\vivaldi\scripts
 someImage.jpg>\resources\vivaldi\style
+
+# |exclude prevents a file from being added to browser.html
+someScript2.js>\resources\vivaldi\scripts|exclude
 ```
 
 ### Dependencies
