@@ -223,7 +223,7 @@ public class InstructionTable extends JTable
 								+ result.substring(navUpIndex + 2);
 				}
 
-				return new Instruction(src, result);
+				return new Instruction(src, result, original.excludeFromBrowserHtml);
 		}
 		
 		

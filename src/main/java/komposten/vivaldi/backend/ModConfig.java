@@ -121,11 +121,12 @@ public class ModConfig
 		}
 		else if (line.contains(">"))
 		{
-			String[] split = line.split(">");
+			String[] split = line.split("[>|]");
 
 			String source = split[0].trim();
 			String target = (split.length > 1 ? split[1].trim() : "");
-			instructions.add(new Instruction(source, target));
+			boolean exclude = (split.length > 2 && split[2].trim().equals("exclude"));
+			instructions.add(new Instruction(source, target, exclude));
 		}
 	}
 
@@ -279,7 +280,11 @@ public class ModConfig
 
 			StringBuilder builder = new StringBuilder();
 			for (Instruction instruction : instructions)
-				builder.append('\n').append(instruction.sourceFile).append(">").append(instruction.targetDirectory);
+			{
+				builder.append('\n').append(instruction.sourceFile).append('>').append(instruction.targetDirectory);
+				if (instruction.excludeFromBrowserHtml)
+					builder.append("|exclude");
+			}
 
 			fops.printData(builder.toString(), false);
 		}

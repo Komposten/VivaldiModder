@@ -75,6 +75,11 @@ public class Patcher
 
 		public void onPatchFinished();
 	}
+	
+	public static final String[] STYLE_SCRIPT_EXTENSIONS = {
+			".js",
+			".css"
+	};
 
 
 	private Collection<PatchProgressListener> listeners;
@@ -337,15 +342,18 @@ public class Patcher
 		
 		for (Instruction instruction : modConfig.getInstructions())
 		{
-			if (instruction.sourceFile.endsWith(".js"))
+			if (!instruction.excludeFromBrowserHtml)
 			{
-				Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
-				scriptFiles.add(relative.toString());
-			}
-			else if (instruction.sourceFile.endsWith(".css"))
-			{
-				Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
-				styleFiles.add(relative.toString());
+				if (instruction.sourceFile.endsWith(".js"))
+				{
+					Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
+					scriptFiles.add(relative.toString());
+				}
+				else if (instruction.sourceFile.endsWith(".css"))
+				{
+					Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
+					styleFiles.add(relative.toString());
+				}
 			}
 		}
 		
@@ -367,6 +375,9 @@ public class Patcher
 	private boolean addStylesAndScripts(File file, List<String> styleFiles,
 			List<String> scriptFiles)
 	{
+		if (styleFiles.isEmpty() && scriptFiles.isEmpty())
+			return true;
+		
 		File backupFile = new File(file.getParentFile(), "browser.html.bak");
 		
 		if (!backupFile.exists() && !backupFile(file, backupFile))
@@ -432,6 +443,7 @@ public class Patcher
 		TransformerFactory transformerFactory = TransformerFactory.newInstance();
 		transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 		Transformer transformer = transformerFactory.newTransformer();
+		transformer.setOutputProperty(OutputKeys.METHOD, "html");
 		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 		DOMSource source = new DOMSource(doc);

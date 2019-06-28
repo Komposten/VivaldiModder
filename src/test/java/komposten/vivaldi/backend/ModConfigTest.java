@@ -45,7 +45,7 @@ class ModConfigTest
 	{
 		ModConfig config = getModConfig("single_file_1.ini");
 
-		Instruction instruction = new Instruction("File1.txt", "");
+		Instruction instruction = new Instruction("File1.txt", "", false);
 
 		assertAll(
 				() -> assertEquals(new File("C:\\Users\\Some User\\Desktop\\Mod"),
@@ -66,7 +66,7 @@ class ModConfigTest
 	{
 		ModConfig config = getModConfig("single_file_2.ini");
 
-		Instruction instruction = new Instruction("File1.txt", "Subdir/Subsubdir");
+		Instruction instruction = new Instruction("File1.txt", "Subdir/Subsubdir", false);
 
 		assertEquals(1, config.getInstructions().size());
 		assertEquals(instruction, config.getInstructions().get(0));
@@ -79,9 +79,9 @@ class ModConfigTest
 	{
 		ModConfig config = getModConfig("multiple_files.ini");
 
-		Instruction instruction1 = new Instruction("File1.txt", "Subdir/Subsubdir1");
-		Instruction instruction2 = new Instruction("File2.txt", "Subdir/Subsubdir2");
-		Instruction instruction3 = new Instruction("File3.txt", "Subdir/Subsubdir3");
+		Instruction instruction1 = new Instruction("File1.txt", "Subdir/Subsubdir1", false);
+		Instruction instruction2 = new Instruction("File2.txt", "Subdir/Subsubdir2", false);
+		Instruction instruction3 = new Instruction("File3.txt", "Subdir/Subsubdir3", false);
 
 		assertEquals(3, config.getInstructions().size());
 
@@ -93,12 +93,35 @@ class ModConfigTest
 
 
 	@Test
+	void loadConfig_multipleInstructionsAndExclude()
+			throws FileNotFoundException, IOException
+	{
+		ModConfig config = getModConfig("multiple_files_2.ini");
+
+		Instruction instruction1 = new Instruction("File1.txt", "", false);
+		Instruction instruction2 = new Instruction("File2.txt", "", true);
+		Instruction instruction3 = new Instruction("File3.txt", "Subdir/Subsubdir2", false);
+		Instruction instruction4 = new Instruction("File4.txt", "Subdir/Subsubdir2", true);
+		Instruction instruction5 = new Instruction("File5.txt", "Subdir/Subsubdir2", false);
+
+		assertEquals(5, config.getInstructions().size());
+
+		assertAll(
+				() -> assertEquals(instruction1, config.getInstructions().get(0)),
+				() -> assertEquals(instruction2, config.getInstructions().get(1)),
+				() -> assertEquals(instruction3, config.getInstructions().get(2)),
+				() -> assertEquals(instruction4, config.getInstructions().get(3)),
+				() -> assertEquals(instruction5, config.getInstructions().get(4)));
+	}
+
+
+	@Test
 	void loadConfig_multipleVivaldis()
 			throws FileNotFoundException, IOException
 	{
 		ModConfig config = getModConfig("multiple_vivaldis.ini");
 
-		Instruction instruction = new Instruction("File1.txt", "Subdir/Subsubdir");
+		Instruction instruction = new Instruction("File1.txt", "Subdir/Subsubdir", false);
 
 		assertAll(
 				() -> assertEquals(new File("C:\\Users\\Some User\\Desktop\\Mod"),
