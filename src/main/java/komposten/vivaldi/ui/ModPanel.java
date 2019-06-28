@@ -230,6 +230,15 @@ public class ModPanel extends JPanel
 
 	private void addInstruction()
 	{
+		if (fieldVivaldiDirs.getTexts().length == 0 || 
+				(fieldVivaldiDirs.getTexts().length == 1 && fieldVivaldiDirs.getTexts()[0].isEmpty()))
+		{
+			String title = "Please add a Vivaldi directory!";
+			String msg = "You cannot add instructions until have you have added a Vivaldi directory!";
+			JOptionPane.showMessageDialog(this, msg, title, JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		
 		if (editDialog == null)
 			editDialog = new EditInstructionDialog(SwingUtilities.getWindowAncestor(this));
 		
