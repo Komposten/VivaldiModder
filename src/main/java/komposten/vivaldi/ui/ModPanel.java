@@ -156,10 +156,10 @@ public class ModPanel extends JPanel
 		constraints.gridy++;
 		constraints.gridx = 0;
 		constraints.gridwidth = 3;
+		constraints.weighty = 0;
 		constraints.fill = GridBagConstraints.BOTH;
 		add(progressBar, constraints);
 		constraints.gridy++;
-		constraints.weighty = 0;
 		constraints.gridwidth = 2;
 		add(buttonPanel, constraints);
 		constraints.gridx = 2;
