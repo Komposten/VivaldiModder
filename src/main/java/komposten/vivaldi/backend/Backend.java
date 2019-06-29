@@ -55,7 +55,7 @@ public class Backend
 	private static final String FILE_SETTINGS = "settings.ini";
 	static final String FILE_CONFIG = "config.ini";
 	static final String FILE_PATCHED = "PATCHED";
-	static final String FILE_PATCHLOG = "patchlog.txt";
+	public static final String FILE_PATCHLOG = "patchlog.txt";
 	
 	private final String configPath;
 

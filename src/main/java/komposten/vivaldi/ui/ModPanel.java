@@ -68,6 +68,7 @@ public class ModPanel extends JPanel
 	private JButton buttonRemove;
 	private JButton buttonEditFile;
 
+	private JButton buttonShowLog;
 	private JButton buttonPatchAll;
 	private JButton buttonPatchUnpatched;
 
@@ -101,6 +102,7 @@ public class ModPanel extends JPanel
 		buttonEdit = new JButton("Edit");
 		buttonRemove = new JButton("Remove");
 		buttonEditFile = new JButton("Edit file");
+		buttonShowLog = new JButton("Show log");
 		buttonPatchAll = new JButton("Patch all");
 		buttonPatchUnpatched = new JButton("Patch unpatched");
 
@@ -108,6 +110,7 @@ public class ModPanel extends JPanel
 		buttonAdd.addActionListener(action -> addInstruction());
 		buttonRemove.addActionListener(action -> removeSelectedInstructions());
 		buttonEdit.addActionListener(e -> editSelectedInstruction());
+		buttonShowLog.addActionListener(e -> showPatchLog());
 		buttonPatchAll.addActionListener(e -> saveAndPatch(true));
 		buttonPatchUnpatched.addActionListener(e -> saveAndPatch(false));
 
@@ -116,6 +119,7 @@ public class ModPanel extends JPanel
 		buttonPanel.add(buttonRemove);
 		buttonPanel.add(buttonEditFile);
 
+		buttonPanel2.add(buttonShowLog);
 		buttonPanel2.add(buttonPatchAll);
 		buttonPanel2.add(buttonPatchUnpatched);
 
@@ -281,6 +285,33 @@ public class ModPanel extends JPanel
 
 		if (instructions.length > 0)
 			instructionsTable.removeInstructions(instructions);
+	}
+	
+	
+	private void showPatchLog()
+	{
+		try
+		{
+			Desktop.getDesktop().open(new File(Backend.FILE_PATCHLOG));
+		}
+		catch (IllegalArgumentException e)
+		{
+			String title = "Could not open the log!";
+			String msg = "The patch log file doesn't exist! Look in log.txt for more details.";
+			JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(ModPanel.this),
+					msg, title, JOptionPane.ERROR_MESSAGE);
+			
+			LogUtils.log(Level.ERROR, ModPanel.class.getSimpleName(), msg, e, false);
+		}
+		catch (IOException e)
+		{
+			String title = "Could not open the log!";
+			String msg = "The patch log could not be opened!\nReason: " + e.getMessage();
+			JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(ModPanel.this),
+					msg, title, JOptionPane.ERROR_MESSAGE);
+			
+			LogUtils.log(Level.ERROR, ModPanel.class.getSimpleName(), msg, e, false);
+		}
 	}
 	
 	
