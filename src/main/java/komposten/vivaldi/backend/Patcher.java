@@ -180,12 +180,16 @@ public class Patcher
 
 		int successes = 0;
 		File vivaldiDir = null;
+		String headerSeparator = "=================================";
+		
 		for (ObjectPair<File, File> versionDir : versionDirs)
 		{
 			if (vivaldiDir == null || !versionDir.getSecond().equals(vivaldiDir))
 			{
 				vivaldiDir = versionDir.getSecond();
-				logger.log(Level.INFO, String.format("Patching installation %s...", vivaldiDir));
+				logger.log(null, headerSeparator);
+				logger.log(null, String.format("Patching installation %s...", vivaldiDir));
+				logger.log(null, headerSeparator);
 				notifyNextInstallation(vivaldiDir);
 			}
 
@@ -196,12 +200,14 @@ public class Patcher
 			}
 		}
 
+		logger.log(null, headerSeparator);
 		if (successes == versionDirs.size())
-			logger.log(Level.INFO, "Patched all Vivaldi installations successfully!");
+			logger.log(null, "Patched all Vivaldi installations successfully!");
 		else
-			logger.log(Level.INFO, String.format(
+			logger.log(Level.WARNING, String.format(
 					"%d/%d versions were not patched successfully! Please review the log above!",
 					versionDirs.size() - successes, versionDirs.size()));
+		logger.log(null, headerSeparator);
 
 		savePatchedVersions();
 		
@@ -215,16 +221,20 @@ public class Patcher
 			listener.onNextVersion(versionDir);
 
 		boolean success = true;
+		String headerSeparator = "---------------------------------";
 
+		logger.log(null, headerSeparator);
 		if (!patchAll && hasBeenPatchedPreviously(vivaldiDir, versionDir))
 		{
-			logger.log(Level.INFO, String.format("Version %s already patched, skipping it.",
+			logger.log(null, String.format("Version %s already patched, skipping it.",
 					versionDir.getName()));
+			logger.log(null, headerSeparator);
 		}
 		else
 		{
-			logger.log(Level.INFO,
+			logger.log(null,
 					String.format("Patching version %s...", versionDir.getName()));
+			logger.log(null, headerSeparator);
 
 			boolean hasBrowserHtmlInstruction = false;
 			for (Instruction instruction : modConfig.getInstructions())
@@ -266,7 +276,7 @@ public class Patcher
 		boolean hasBackup = true;
 		
 		if (targetFile.exists() && !backupFile.exists())
-			hasBackup = backupFile(targetFile, backupFile);
+			hasBackup = backupFile(targetFile, backupFile, versionDir);
 
 		if (hasBackup)
 			return copyModFile(sourceFile, targetFile);
@@ -275,20 +285,22 @@ public class Patcher
 	}
 
 
-	private boolean backupFile(File file, File backupFile)
+	private boolean backupFile(File file, File backupFile, File relativeTo)
 	{
+		String relativePath = relativeTo.toPath().relativize(file.toPath()).toString();
+		
 		try
 		{
-			logger.log(Level.INFO,
-					String.format("Backing up %s...", getAbsolutePath(file)));
+			logger.log(null,
+					String.format("Backing up %s...", relativePath));
+			
 			return FileOperations.copyFile(file, backupFile);
 		}
 		catch (IOException e)
 		{
 			String message = String.format(
-					"Could not back up %s, so it will not be replaced: %s",
-					file.getName(), e.getMessage());
-			logger.log(Level.WARNING, message);
+					"Could not back up %s, so it will not be replaced!", relativePath);
+			logger.log(Level.ERROR, "", message, e, false);
 			
 			return false;
 		}
@@ -297,8 +309,12 @@ public class Patcher
 
 	private boolean copyModFile(File sourceFile, File targetFile)
 	{
+		String relativePath = modConfig.getModDir().toPath().relativize(sourceFile.toPath()).toString();
+		
 		try
 		{
+			logger.log(null, String.format("Copying %s...", relativePath));
+			
 			if (!sourceFile.exists())
 				throw new FileNotFoundException(
 						String.format("%s does not exist!", sourceFile.getPath()));
@@ -310,9 +326,8 @@ public class Patcher
 		}
 		catch (IOException e)
 		{
-			String message = String.format("Could not copy %s: %s", sourceFile.getName(),
-					e.getMessage());
-			logger.log(Level.WARNING, message);
+			String message = String.format("Could not copy %s", relativePath);
+			logger.log(Level.ERROR, "", message, e, false);
 			return false;
 		}
 		
@@ -322,10 +337,20 @@ public class Patcher
 	
 	private boolean generateBrowserHtmlFile(File versionDir)
 	{
+		logger.log(null, "Updating resources/vivaldi/browser.html...");
+		
 		List<String> styleFiles = new ArrayList<>();
 		List<String> scriptFiles = new ArrayList<>();
 
-		Path pathBrowser = new File(versionDir, "resources/vivaldi/").toPath();
+		Path pathVivaldi = new File(versionDir, "resources/vivaldi/").toPath();
+		File fileBrowserHtml = pathVivaldi.resolve("browser.html").toFile();
+		
+		if (!fileBrowserHtml.exists())
+		{
+			String message = "Can not update resources/vivaldi/browser.html, it does not exist!";
+			logger.log(Level.ERROR, message);
+			return false;
+		}
 		
 		for (Instruction instruction : modConfig.getInstructions())
 		{
@@ -333,18 +358,18 @@ public class Patcher
 			{
 				if (Utilities.isScript(instruction.sourceFile))
 				{
-					Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
+					Path relative = getPathRelativeToBrowser(versionDir, pathVivaldi, instruction);
 					scriptFiles.add(relative.toString());
 				}
 				else if (Utilities.isStyle(instruction.sourceFile))
 				{
-					Path relative = getPathRelativeToBrowser(versionDir, pathBrowser, instruction);
+					Path relative = getPathRelativeToBrowser(versionDir, pathVivaldi, instruction);
 					styleFiles.add(relative.toString());
 				}
 			}
 		}
 		
-		return addStylesAndScripts(pathBrowser.resolve("browser.html").toFile(), styleFiles, scriptFiles);
+		return addStylesAndScripts(fileBrowserHtml, versionDir, styleFiles, scriptFiles);
 	}
 
 
@@ -359,7 +384,7 @@ public class Patcher
 	}
 
 
-	private boolean addStylesAndScripts(File file, List<String> styleFiles,
+	private boolean addStylesAndScripts(File file, File versionDir, List<String> styleFiles,
 			List<String> scriptFiles)
 	{
 		if (styleFiles.isEmpty() && scriptFiles.isEmpty())
@@ -367,7 +392,7 @@ public class Patcher
 		
 		File backupFile = new File(file.getParentFile(), "browser.html.bak");
 		
-		if (!backupFile.exists() && !backupFile(file, backupFile))
+		if (!backupFile.exists() && !backupFile(file, backupFile, versionDir))
 				return false;
 		
 		Document document = readBrowserHtml(backupFile);
@@ -415,9 +440,8 @@ public class Patcher
 		}
 		catch (IOException e)
 		{
-			String message = String.format(
-					"Could not read %s: %s", file, e.getMessage());
-			logger.log(Level.WARNING, message);
+			String message = "Could not read resources/vivaldi/browser.html!";
+			logger.log(Level.ERROR, "", message, e, false);
 		}
 		
 		return document;
@@ -428,6 +452,7 @@ public class Patcher
 	{
 		try
 		{
+			logger.log(null, "Saving the modified resources/vivaldi/browser.html...");
 			FileOperations fops = new FileOperations();
 			fops.createWriter(file, false);
 			fops.printData(document.html(), false);
@@ -436,9 +461,8 @@ public class Patcher
 		}
 		catch (IOException e)
 		{
-			String message = String.format(
-					"Could not save the modified %s: %s", file, e.getMessage());
-			logger.log(Level.WARNING, message);
+			String message = "Could not save the modified resources/vivaldi/browser.html!";
+			logger.log(Level.ERROR, "", message, e, false);
 
 			return false;
 		}

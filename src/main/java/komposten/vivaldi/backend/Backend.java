@@ -42,6 +42,7 @@ import komposten.utilities.logging.LogUtils;
 import komposten.utilities.logging.Logger;
 import komposten.utilities.tools.FileOperations;
 import komposten.vivaldi.backend.Patcher.PatchProgressListener;
+import komposten.vivaldi.util.PatchLogFormatter;
 
 
 public class Backend
@@ -82,6 +83,7 @@ public class Backend
 		workerThread.start();
 
 		patchLogger = new Logger(FILE_PATCHLOG);
+		patchLogger.setFormatter(new PatchLogFormatter());
 		clearLog();
 		loadConfigs();
 		patcher = new Patcher(modConfig, patchLogger);
