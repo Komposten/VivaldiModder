@@ -611,6 +611,7 @@ public class Patcher
 				builder.append(entry.getKey()).append("=");
 				for (String version : entry.getValue())
 					builder.append(version).append(";");
+				builder.append("\n");
 			}
 
 			fops.printData(builder.toString(), false);
