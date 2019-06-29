@@ -19,20 +19,8 @@ public class PatchLogFormatter implements LogFormatter
 		
 		builder.append(dateFormat.format(date.getTime())).append(" | ");
 		
-		if (logLevel != null)
-		{
-			builder.append(logLevel.getName());
-			
-			if (location != null && !location.isEmpty())
-				builder.append(" in ").append(location).append(": ");
-			else
-				builder.append(": ");
-		}
-		else
-		{
-			if (location != null && !location.isEmpty())
-				builder.append("In ").append(location).append(": ");
-		}
+		if (location != null && !location.isEmpty())
+			builder.append("In ").append(location).append(": ");
 		
 		builder.append(message).append("\r\n");
 		
@@ -42,21 +30,20 @@ public class PatchLogFormatter implements LogFormatter
 			
 			while (throwable != null)
 			{
-				builder.append(indent).append("Cause: ").append(throwable.getMessage()).append("\r\n");
+				builder.append(indent).append("        Cause: ").append(throwable.getMessage()).append("\r\n");
 				throwable = throwable.getCause();
 			}
 		}
 		
-		return builder.toString();
+		return builder.toString().replace('\\', '/');
 	}
 
 	private String createIndentString(StringBuilder builder)
 	{
 		int indentSize = builder.indexOf("|");
-		char[] indentChars = new char[indentSize+4];
+		char[] indentChars = new char[indentSize+2];
 		Arrays.fill(indentChars, ' ');
 		indentChars[indentSize] = '|';
-		indentChars[indentSize+2] = '>';
 		
 		return new String(indentChars);
 	}

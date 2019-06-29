@@ -71,6 +71,8 @@ public class Patcher
 	private Map<String, List<String>> patchedVersions;
 	private ModConfig modConfig;
 	private Logger logger;
+	
+	private List<LogMessage> errors;
 
 
 	public Patcher(ModConfig modConfig, Logger logger)
@@ -78,6 +80,7 @@ public class Patcher
 		this.modConfig = modConfig;
 		this.logger = logger;
 		this.listeners = new LinkedList<>();
+		this.errors = new LinkedList<>();
 
 		loadPatchedVersions();
 	}
@@ -232,25 +235,34 @@ public class Patcher
 		}
 		else
 		{
-			logger.log(null,
-					String.format("Patching version %s...", versionDir.getName()));
+			logger.log(null,String.format("Patching version %s...", versionDir.getName()));
 			logger.log(null, headerSeparator);
 
-			boolean hasBrowserHtmlInstruction = false;
-			for (Instruction instruction : modConfig.getInstructions())
-			{
-				if (!executeInstruction(versionDir, instruction))
-					success = false;
-				
-				if (instruction.sourceFile.endsWith("browser.html"))
-					hasBrowserHtmlInstruction = true;
-			}
+			logger.log(null, "BACKING UP FILES");
+			List<Instruction> successfulBackups = backupFiles(versionDir);
+			if (successfulBackups.size() != modConfig.getInstructions().size())
+				success = false;
 			
-			if (!hasBrowserHtmlInstruction)
+			logger.log(null, "");
+			logger.log(null, "COPYING MOD FILES");
+			if (!copyFiles(successfulBackups, versionDir))
+				success = false;
+
+			if (!hasBrowserHtmlInstruction())
 			{
+				logger.log(null, "");
+				logger.log(null, "UPDATING BROWSER.HTML");
 				if (!generateBrowserHtmlFile(versionDir))
 					success = false;
 			}
+			
+			if (!errors.isEmpty())
+			{
+				logger.log(null, "");
+				logErrors();
+			}
+
+			logger.log(null, "");
 		}
 
 		return success;
@@ -265,80 +277,134 @@ public class Patcher
 	}
 
 
-	private boolean executeInstruction(File versionDir, Instruction instruction)
+	/**
+	 * @return A list of all instructions that were backed up successfully.
+	 */
+	private List<Instruction> backupFiles(File versionDir)
 	{
-		notifyNextModFile(instruction);
-		File sourceFile = new File(modConfig.getModDir(), instruction.sourceFile);
-		File targetDir = new File(versionDir, instruction.targetDirectory);
-		File targetFile = new File(targetDir, sourceFile.getName());
-		File backupFile = new File(targetDir, sourceFile.getName() + ".bak");
-
-		boolean hasBackup = true;
+		List<Instruction> instructions = new LinkedList<>();
+		boolean anyNeededBackup = false;
 		
-		if (targetFile.exists() && !backupFile.exists())
-			hasBackup = backupFile(targetFile, backupFile, versionDir);
+		for (Instruction instruction : modConfig.getInstructions())
+		{
+			File sourceFile = new File(modConfig.getModDir(), instruction.sourceFile);
+			File targetDir = new File(versionDir, instruction.targetDirectory);
+			File targetFile = new File(targetDir, sourceFile.getName());
+			File backupFile = new File(targetDir, sourceFile.getName() + ".bak");
+			
+			if (targetFile.exists())
+			{
+				if (!backupFile.exists())
+				{
+					anyNeededBackup = true;
+					if (backupFile(targetFile, backupFile, versionDir))
+						instructions.add(instruction);
+				}
+				else
+				{
+					instructions.add(instruction);
+				}
+			}
+		}
+		
+		File browser = new File(versionDir, "resources/vivaldi/browser.html");
+		File browserBackup = new File(browser.getParentFile(), "browser.html.bak");
+		
+		if (browser.exists() && !browserBackup.exists())
+		{
+			anyNeededBackup = true;
+			backupFile(browser, browserBackup, versionDir);
+		}
+		
+		if (!anyNeededBackup)
+			logger.log(null, String.format("  %s All files already had back-ups!", getResultString(true)));
+		
+		return instructions;
+	}
 
-		if (hasBackup)
-			return copyModFile(sourceFile, targetFile);
-		else
-			return false;
+
+	private boolean copyFiles(List<Instruction> instructions, File versionDir)
+	{
+		boolean allSuccessful = true;
+		for (Instruction instruction : instructions)
+		{
+			File sourceFile = new File(modConfig.getModDir(), instruction.sourceFile);
+			File targetDir = new File(versionDir, instruction.targetDirectory);
+			File targetFile = new File(targetDir, sourceFile.getName());
+			
+			if (!copyFile(sourceFile, targetFile, modConfig.getModDir()))
+				allSuccessful = false;
+		}
+		
+		return allSuccessful;
 	}
 
 
 	private boolean backupFile(File file, File backupFile, File relativeTo)
 	{
 		String relativePath = relativeTo.toPath().relativize(file.toPath()).toString();
+		boolean success;
 		
 		try
 		{
-			logger.log(null,
-					String.format("Backing up %s...", relativePath));
-			
-			return FileOperations.copyFile(file, backupFile);
+			success = FileOperations.copyFile(file, backupFile);
 		}
 		catch (IOException e)
 		{
 			String message = String.format(
 					"Could not back up %s, so it will not be replaced!", relativePath);
-			logger.log(Level.ERROR, "", message, e, false);
+			errors.add(new LogMessage(Level.ERROR, "", message, e));
 			
-			return false;
+			success = false;
 		}
+		
+		logger.log(null, String.format("  %s %s", getResultString(success), relativePath));
+		return success;
 	}
 
 
-	private boolean copyModFile(File sourceFile, File targetFile)
+	private boolean copyFile(File file, File targetFile, File relativeTo)
 	{
-		String relativePath = modConfig.getModDir().toPath().relativize(sourceFile.toPath()).toString();
+		String relativePath = relativeTo.toPath().relativize(file.toPath()).toString();
+		boolean success;
 		
 		try
 		{
-			logger.log(null, String.format("Copying %s...", relativePath));
-			
-			if (!sourceFile.exists())
+			if (!file.exists())
 				throw new FileNotFoundException(
-						String.format("%s does not exist!", sourceFile.getPath()));
-			if (!sourceFile.isFile())
+						String.format("%s does not exist!", file.getPath()));
+			if (!file.isFile())
 				throw new IOException(
-						String.format("%s is not a file!", sourceFile.getPath()));
+						String.format("%s is not a file!", file.getPath()));
 			
-			FileOperations.copyFile(sourceFile, targetFile);
+			success = FileOperations.copyFile(file, targetFile);
 		}
 		catch (IOException e)
 		{
 			String message = String.format("Could not copy %s", relativePath);
-			logger.log(Level.ERROR, "", message, e, false);
-			return false;
+			errors.add(new LogMessage(Level.ERROR, "", message, e));
+			success = false;
+		}
+
+		logger.log(null, String.format("  %s %s", getResultString(success), relativePath));
+		return success;
+	}
+	
+	
+	private boolean hasBrowserHtmlInstruction()
+	{
+		for (Instruction instruction : modConfig.getInstructions())
+		{
+			if (instruction.sourceFile.toLowerCase().endsWith("browser.html"))
+				return true;
 		}
 		
-		return true;
+		return false;
 	}
 	
 	
 	private boolean generateBrowserHtmlFile(File versionDir)
 	{
-		logger.log(null, "Updating resources/vivaldi/browser.html...");
-		
 		List<String> styleFiles = new ArrayList<>();
 		List<String> scriptFiles = new ArrayList<>();
 
@@ -347,8 +413,10 @@ public class Patcher
 		
 		if (!fileBrowserHtml.exists())
 		{
-			String message = "Can not update resources/vivaldi/browser.html, it does not exist!";
-			logger.log(Level.ERROR, message);
+			logger.log(null, String.format("  %s Reading resources/vivaldi/browser.html",
+							getResultString(false)));
+			String message = "resources/vivaldi/browser.html does not exist!";
+			errors.add(new LogMessage(Level.ERROR, message));
 			return false;
 		}
 		
@@ -369,7 +437,7 @@ public class Patcher
 			}
 		}
 		
-		return addStylesAndScripts(fileBrowserHtml, versionDir, styleFiles, scriptFiles);
+		return addStylesAndScripts(fileBrowserHtml, styleFiles, scriptFiles);
 	}
 
 
@@ -384,49 +452,68 @@ public class Patcher
 	}
 
 
-	private boolean addStylesAndScripts(File file, File versionDir, List<String> styleFiles,
-			List<String> scriptFiles)
+	private boolean addStylesAndScripts(File file, List<String> styleFiles, List<String> scriptFiles)
 	{
 		if (styleFiles.isEmpty() && scriptFiles.isEmpty())
+		{
+			logger.log(null, String.format("  %s No files to add",
+					getResultString(true)));
 			return true;
-		
+		}
+
 		File backupFile = new File(file.getParentFile(), "browser.html.bak");
-		
-		if (!backupFile.exists() && !backupFile(file, backupFile, versionDir))
-				return false;
-		
 		Document document = readBrowserHtml(backupFile);
 
 		if (document != null)
 		{
-			Element head = document.selectFirst("head");
-			Element body = document.selectFirst("body");
+			updateHtmlDocument(document, styleFiles, scriptFiles);
 			
-			for (String styleFile : styleFiles)
+			if (saveToFile(document, file))
 			{
-				if (head.getElementsByAttributeValue("href", styleFile).isEmpty())
-				{
-					Element element = document.createElement("link");
-					element.attr("rel", "stylesheet");
-					element.attr("href", styleFile);
-					head.appendChild(element);
-				}
+				for (String scriptFile : scriptFiles)
+					logger.log(null, String.format("  %s Added %s", getResultString(true), scriptFile));
+				for (String styleFile : styleFiles)
+					logger.log(null, String.format("  %s Added %s", getResultString(true), styleFile));
+				
+				return true;
 			}
-			
-			for (String scriptFile : scriptFiles)
-			{
-				if (body.getElementsByAttributeValue("href", scriptFile).isEmpty())
-				{
-					Element element = document.createElement("script");
-					element.attr("src", scriptFile);
-					body.appendChild(element);
-				}
-			}
-			
-			return saveToFile(document, file);
+		}
+		else
+		{
+			logger.log(null, String.format("  %s Reading resources/vivaldi/browser.html",
+							getResultString(false)));
 		}
 		
 		return false;
+	}
+
+
+	private void updateHtmlDocument(Document document, List<String> styleFiles,
+			List<String> scriptFiles)
+	{
+		Element head = document.selectFirst("head");
+		Element body = document.selectFirst("body");
+		
+		for (String styleFile : styleFiles)
+		{
+			if (head.getElementsByAttributeValue("href", styleFile).isEmpty())
+			{
+				Element element = document.createElement("link");
+				element.attr("rel", "stylesheet");
+				element.attr("href", styleFile);
+				head.appendChild(element);
+			}
+		}
+		
+		for (String scriptFile : scriptFiles)
+		{
+			if (body.getElementsByAttributeValue("href", scriptFile).isEmpty())
+			{
+				Element element = document.createElement("script");
+				element.attr("src", scriptFile);
+				body.appendChild(element);
+			}
+		}
 	}
 
 
@@ -441,7 +528,7 @@ public class Patcher
 		catch (IOException e)
 		{
 			String message = "Could not read resources/vivaldi/browser.html!";
-			logger.log(Level.ERROR, "", message, e, false);
+			errors.add(new LogMessage(Level.ERROR, "", message, e));
 		}
 		
 		return document;
@@ -452,7 +539,6 @@ public class Patcher
 	{
 		try
 		{
-			logger.log(null, "Saving the modified resources/vivaldi/browser.html...");
 			FileOperations fops = new FileOperations();
 			fops.createWriter(file, false);
 			fops.printData(document.html(), false);
@@ -462,10 +548,28 @@ public class Patcher
 		catch (IOException e)
 		{
 			String message = "Could not save the modified resources/vivaldi/browser.html!";
-			logger.log(Level.ERROR, "", message, e, false);
+			errors.add(new LogMessage(Level.ERROR, "", message, e));
 
 			return false;
 		}
+	}
+
+
+	private void logErrors()
+	{
+		logger.log(null, String.format("%s ERROR%s OCCURRED", errors.size(), errors.size() != 1 ? "S" : ""));
+		for (LogMessage error : errors)
+		{
+			String message = String.format("  %s %s", getResultString(false), error.message);
+			logger.log(error.logLevel, error.location, message, error.throwable, false);
+		}
+		errors.clear();
+	}
+	
+	
+	private String getResultString(boolean success)
+	{
+		return success ? "[+]" : "[!]";
 	}
 
 
@@ -558,9 +662,32 @@ public class Patcher
 	}
 
 
+	@SuppressWarnings("unused")
 	private void notifyNextModFile(Instruction instruction)
 	{
 		for (PatchProgressListener listener : listeners)
 			listener.onNextModFile(instruction.sourceFile);
+	}
+	
+	
+	private class LogMessage
+	{
+		private final Level logLevel;
+		private final String location;
+		private final String message;
+		private final Throwable throwable;
+		
+		public LogMessage(Level logLevel, String message)
+		{
+			this(logLevel, null, message, null);
+		}
+
+		public LogMessage(Level logLevel, String location, String message, Throwable t)
+		{
+			this.logLevel = logLevel;
+			this.location = location;
+			this.message = message;
+			this.throwable = t;
+		}
 	}
 }
