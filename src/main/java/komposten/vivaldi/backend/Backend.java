@@ -37,6 +37,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.JOptionPane;
 
 import komposten.utilities.data.Settings;
+import komposten.utilities.logging.ExceptionHandler;
 import komposten.utilities.logging.Level;
 import komposten.utilities.logging.LogUtils;
 import komposten.utilities.logging.Logger;
@@ -84,6 +85,7 @@ public class Backend
 
 		patchLogger = new Logger(FILE_PATCHLOG);
 		patchLogger.setFormatter(new PatchLogFormatter());
+		patchLogger.setExceptionHandler(new PatchExceptionHandler()); 
 		clearLog();
 		loadConfigs();
 		patcher = new Patcher(modConfig, patchLogger);
@@ -375,6 +377,30 @@ public class Backend
 					Thread.currentThread().interrupt();
 					break;
 				}
+			}
+		}
+	}
+	
+	
+	private class PatchExceptionHandler extends ExceptionHandler
+	{
+		private String previousException;
+		private long previousTime;
+		
+		@Override
+		public void handleException(String msg, Throwable throwable)
+		{
+			//Checking message and time to prevent spam of the same message multiple times
+			//in a short interval, which happens when the patch logger can't write to
+			//patchlog.txt but is called to several times write anyway.
+			if (LogUtils.hasInitialised() && 
+					(!throwable.getMessage().equals(previousException) ||
+					(System.nanoTime() - previousTime) > 5E9))
+			{
+				previousException = throwable.getMessage();
+				previousTime = System.nanoTime();
+				
+				LogUtils.log(Level.ERROR, "", msg, throwable, true);
 			}
 		}
 	}
