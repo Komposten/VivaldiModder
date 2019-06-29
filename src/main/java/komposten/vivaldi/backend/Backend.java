@@ -61,7 +61,7 @@ public class Backend
 	private WatchService watchService;
 	private Map<WatchKey, File> keyToDirMap;
 
-	private Logger logger;
+	private Logger patchLogger;
 	private Patcher patcher;
 	private ModConfig modConfig;
 	private Settings appConfig;
@@ -81,10 +81,10 @@ public class Backend
 		workerThread = new WorkerThread();
 		workerThread.start();
 
-		logger = new Logger(FILE_PATCHLOG);
+		patchLogger = new Logger(FILE_PATCHLOG);
 		clearLog();
 		loadConfigs();
-		patcher = new Patcher(modConfig, logger);
+		patcher = new Patcher(modConfig, patchLogger);
 
 	}
 
@@ -181,7 +181,7 @@ public class Backend
 			for (String error : errors)
 				builder.append("\n" + error);
 
-			logger.log(Level.ERROR, builder.toString());
+			LogUtils.log(Level.ERROR, builder.toString());
 
 			//FIXME Don't show UI messages in the backend!
 			JOptionPane.showMessageDialog(null, builder.toString(), "Invalid config!",
