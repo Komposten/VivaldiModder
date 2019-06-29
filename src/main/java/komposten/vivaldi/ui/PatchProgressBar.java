@@ -30,8 +30,16 @@ import komposten.vivaldi.backend.Patcher.PatchProgressListener;
 
 public class PatchProgressBar extends JPanel
 {
+	private enum State
+	{
+		PATCHING,
+		SUCCESS,
+		FAIL
+	}
+	
 	private float progress = 0;
-
+	private State state;
+	
 
 	public PatchProgressBar(Backend backend)
 	{
@@ -44,7 +52,11 @@ public class PatchProgressBar extends JPanel
 	{
 		super.paintComponent(g);
 
-		g.setColor(Color.GREEN);
+		Color colour = (state == State.PATCHING ? Color.YELLOW : Color.RED);
+		if (state == State.SUCCESS)
+			colour = Color.GREEN;
+		
+		g.setColor(colour);
 		g.fillRect(0, 0, (int) (getWidth() * progress), getHeight());
 	}
 
@@ -60,6 +72,7 @@ public class PatchProgressBar extends JPanel
 		{
 			this.fileCounter = 0;
 
+			state = State.PATCHING;
 			progress = 0;
 			repaint();
 		}
@@ -96,9 +109,10 @@ public class PatchProgressBar extends JPanel
 
 
 		@Override
-		public void onPatchFinished()
+		public void onPatchFinished(boolean success)
 		{
 			progress = 1;
+			state = (success ? State.SUCCESS : State.FAIL);
 			repaint();
 		}
 	};

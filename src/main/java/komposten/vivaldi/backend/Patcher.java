@@ -63,7 +63,7 @@ public class Patcher
 		public void onNextModFile(String file);
 
 
-		public void onPatchFinished();
+		public void onPatchFinished(boolean success);
 	}
 
 
@@ -129,16 +129,16 @@ public class Patcher
 	public void applyMods(boolean patchAll)
 	{
 		notifyPatchStarted();
-		applyMods(listVersionDirs(), patchAll);
-		notifyPatchFinished();
+		boolean success = applyMods(listVersionDirs(), patchAll);
+		notifyPatchFinished(success);
 	}
 
 
 	public void applyMods(File vivaldiDir, boolean patchAll)
 	{
 		notifyPatchStarted();
-		applyMods(listVersionDirs(vivaldiDir), patchAll);
-		notifyPatchFinished();
+		boolean success = applyMods(listVersionDirs(vivaldiDir), patchAll);
+		notifyPatchFinished(success);
 	}
 
 
@@ -174,7 +174,7 @@ public class Patcher
 	}
 
 
-	private void applyMods(List<ObjectPair<File, File>> versionDirs, boolean patchAll)
+	private boolean applyMods(List<ObjectPair<File, File>> versionDirs, boolean patchAll)
 	{
 		notifyFilesToPatch(versionDirs);
 
@@ -204,6 +204,8 @@ public class Patcher
 					versionDirs.size() - successes, versionDirs.size()));
 
 		savePatchedVersions();
+		
+		return successes == versionDirs.size();
 	}
 
 	
@@ -511,10 +513,10 @@ public class Patcher
 	}
 
 
-	private void notifyPatchFinished()
+	private void notifyPatchFinished(boolean success)
 	{
 		for (PatchProgressListener listener : listeners)
-			listener.onPatchFinished();
+			listener.onPatchFinished(success);
 	}
 
 
