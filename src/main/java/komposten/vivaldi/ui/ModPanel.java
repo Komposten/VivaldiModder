@@ -381,6 +381,13 @@ public class ModPanel extends JPanel
 				{
 					Desktop.getDesktop().edit(file);
 				}
+				catch (IllegalArgumentException e)
+				{
+					String title = "Failed to open file editor!";
+					String msg = "The selected file does not exist!";
+					JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(ModPanel.this),
+							msg, title, JOptionPane.ERROR_MESSAGE);
+				}
 				catch (IOException e)
 				{
 					String title = "Failed to open file editor!";
@@ -411,6 +418,13 @@ public class ModPanel extends JPanel
 		try
 		{
 			Desktop.getDesktop().open(directory);
+		}
+		catch (IllegalArgumentException e)
+		{
+			String title = "Failed to open the directory!";
+			String msg = "The selected directory does not exist!";
+			JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(ModPanel.this),
+					msg, title, JOptionPane.ERROR_MESSAGE);
 		}
 		catch (IOException e)
 		{
