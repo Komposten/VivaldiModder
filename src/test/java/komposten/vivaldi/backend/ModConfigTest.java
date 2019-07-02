@@ -26,15 +26,15 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
+import komposten.vivaldi.TestUtils;
+
 
 class ModConfigTest
 {
-	private ModConfig getModConfig(String file)
-			throws FileNotFoundException, IOException
+	private ModConfig getModConfig(String path) throws IOException
 	{
-		String path = Thread.currentThread().getContextClassLoader()
-				.getResource(file).getFile().replace("%20", " ");
-		ModConfig config = new ModConfig(new File(path));
+		File file = TestUtils.getTestFile(path);
+		ModConfig config = new ModConfig(file);
 		return config;
 	}
 
