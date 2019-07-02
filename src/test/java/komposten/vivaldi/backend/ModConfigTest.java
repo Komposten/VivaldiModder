@@ -48,14 +48,14 @@ class ModConfigTest
 		Instruction instruction = new Instruction("File1.txt", "", false);
 
 		assertAll(
-				() -> assertEquals(new File("C:\\Users\\Some User\\Desktop\\Mod"),
+				() -> assertEquals(new File("C:\\Users\\Some User\\Desktop\\Mod\\"),
 						config.getModDir()),
 				() -> assertEquals(1, config.getVivaldiDirs().length),
 				() -> assertEquals(1, config.getInstructions().size()));
 
 		assertAll(
-				() -> assertEquals("C:\\Users\\Some User\\AppData\\Local\\Vivaldi",
-						config.getVivaldiDirs()[0].getPath()),
+				() -> assertEquals(new File("C:\\Users\\Some User\\AppData\\Local\\Vivaldi\\"),
+						config.getVivaldiDirs()[0]),
 				() -> assertEquals(instruction, config.getInstructions().get(0)));
 	}
 
@@ -124,16 +124,16 @@ class ModConfigTest
 		Instruction instruction = new Instruction("File1.txt", "Subdir/Subsubdir", false);
 
 		assertAll(
-				() -> assertEquals(new File("C:\\Users\\Some User\\Desktop\\Mod"),
+				() -> assertEquals(new File("C:\\Users\\Some User\\Desktop\\Mod\\"),
 						config.getModDir()),
 				() -> assertEquals(2, config.getVivaldiDirs().length),
 				() -> assertEquals(1, config.getInstructions().size()));
 
 		assertAll(
-				() -> assertEquals("C:\\Users\\Some User\\AppData\\Local\\Vivaldi",
-						config.getVivaldiDirs()[0].getPath()),
-				() -> assertEquals("C:\\Users\\Some User\\AppData\\Local\\Vivaldi2",
-						config.getVivaldiDirs()[1].getPath()),
+				() -> assertEquals(new File("C:\\Users\\Some User\\AppData\\Local\\Vivaldi\\"),
+						config.getVivaldiDirs()[0]),
+				() -> assertEquals(new File("C:\\Users\\Some User\\AppData\\Local\\Vivaldi2\\"),
+						config.getVivaldiDirs()[1]),
 				() -> assertEquals(instruction, config.getInstructions().get(0)));
 	}
 }
