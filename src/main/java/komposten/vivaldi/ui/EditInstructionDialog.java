@@ -182,8 +182,8 @@ public class EditInstructionDialog extends JDialog
 
 	private File findVersionDir(File vivaldiDir)
 	{
-		File[] versionFolders = vivaldiDir.listFiles(DirectoryUtils.vivaldiVersionFolderFilter);
-		return versionFolders[0];
+		List<File> versionDirs = DirectoryUtils.findVivaldiVersionDirs(vivaldiDir);
+		return versionDirs.get(0);
 	}
 
 

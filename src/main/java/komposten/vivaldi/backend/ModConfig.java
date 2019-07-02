@@ -185,7 +185,6 @@ public class ModConfig
 		validateInstructions(errors, modDirValid);
 
 		return errors;
-
 	}
 
 
@@ -223,8 +222,7 @@ public class ModConfig
 							String.format("Invalid Vivaldi dir: %s is not a directory!", vivaldiDir));
 				}
 
-				boolean hasVersionFolder = vivaldiDir
-						.listFiles(DirectoryUtils.vivaldiVersionFolderFilter).length > 0;
+				boolean hasVersionFolder = !DirectoryUtils.findVivaldiVersionDirs(vivaldiDir).isEmpty();
 				
 				if (!hasVersionFolder)
 				{

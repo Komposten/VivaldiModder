@@ -169,9 +169,11 @@ public class Patcher
 	private List<ObjectPair<File, File>> listVersionDirs(File vivaldiDir)
 	{
 		List<ObjectPair<File, File>> dirs = new LinkedList<>();
-		File[] versionDirs = vivaldiDir.listFiles(DirectoryUtils.vivaldiVersionFolderFilter);
-		for (File versionDir : versionDirs)
-			dirs.add(new ObjectPair<File, File>(versionDir, vivaldiDir));
+		
+		List<File> versionDirs = DirectoryUtils.findVivaldiVersionDirs(vivaldiDir);
+		
+		for (File dir : versionDirs)
+			dirs.add(new ObjectPair<File, File>(dir, vivaldiDir));
 
 		return dirs;
 	}
