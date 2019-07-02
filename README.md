@@ -2,7 +2,7 @@
 ### What is VivaldiModder?
 VivaldiModder is a simple program for applying custom CSS and JavaScript modifications to local installations of the [Vivaldi web browser](https://vivaldi.com). VivaldiModder provides an interface for listing and editing mod files, and patching multiple Vivaldi installations at once with automatic back-up of any files that would be overwritten.
 
-![Screenshot 1](../eccbce9e9ab4df1af53aff9ace801c769e4a92a0/screenshots/user_interface.png?raw=true)
+![Screenshot 1](../a00ea1d1a93f8b294d109dd8aa01d521c325d402/screenshots/user_interface.png?raw=true)
 
 ### Features
 - Simple user interface for selecting mod files and Vivaldi installation directories.
