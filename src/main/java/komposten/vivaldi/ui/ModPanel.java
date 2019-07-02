@@ -18,7 +18,6 @@
  */
 package komposten.vivaldi.ui;
 
-import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -26,10 +25,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -38,7 +36,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
@@ -49,7 +46,6 @@ import komposten.utilities.logging.LogUtils;
 import komposten.vivaldi.backend.Backend;
 import komposten.vivaldi.backend.Instruction;
 import komposten.vivaldi.backend.ModConfig;
-import komposten.vivaldi.util.DirectoryUtils;
 
 
 public class ModPanel extends JPanel
@@ -59,7 +55,7 @@ public class ModPanel extends JPanel
 	private JLabel labelModDir;
 	private JLabel labelVivaldiDirs;
 	private BrowseTextField fieldModDir;
-	private MultiTextField fieldVivaldiDirs;
+	private VivaldiDirList listVivaldiDirs;
 	private InstructionTable instructionsTable;
 	private JPanel buttonPanel;
 	private JPanel buttonPanel2;
@@ -75,6 +71,7 @@ public class ModPanel extends JPanel
 	private PatchProgressBar progressBar;
 	
 	private EditInstructionDialog editDialog;
+	private VivaldiDirectoryDialog vivaldiDialog;
 
 	public ModPanel(String configPath)
 	{
@@ -86,9 +83,7 @@ public class ModPanel extends JPanel
 		labelVivaldiDirs = new JLabel("Vivaldi directories:");
 		fieldModDir = new BrowseTextField("Choose your mod directory",
 				JFileChooser.DIRECTORIES_ONLY, this::open);
-		//TODO Add a BrowserListener to MultiTextField so we can know when a Vivaldi dir changes due to browsing.
-		fieldVivaldiDirs = new MultiTextField(this::open);
-		fieldVivaldiDirs.addTextFocusListener(vivaldiDirFocusListener);
+		listVivaldiDirs = new VivaldiDirList(this::showVivaldiDirSelector);
 
 		instructionsTable = new InstructionTable();
 		instructionsTable.getSelectionModel().addListSelectionListener(selectionListener);
@@ -151,7 +146,7 @@ public class ModPanel extends JPanel
 		constraints.gridx = 1;
 		constraints.gridwidth = 2;
 		constraints.fill = GridBagConstraints.HORIZONTAL;
-		add(fieldVivaldiDirs, constraints);
+		add(listVivaldiDirs, constraints);
 		constraints.gridx = 0;
 		constraints.gridy++;
 		constraints.gridwidth = 3;
@@ -190,20 +185,19 @@ public class ModPanel extends JPanel
 		for (int i = 0; i < dirFiles.length; i++)
 			dirs[i] = dirFiles[i].getPath();
 
-		fieldVivaldiDirs.addRows(dirs);
+		listVivaldiDirs.addDirectories(dirs, false);
 	}
 
 
 	private boolean saveData()
 	{
 		String modDirString = fieldModDir.getTextfield().getText();
-		String[] vivaldiDirStrings = fieldVivaldiDirs.getTexts();
+		String[] vivaldiDirStrings = listVivaldiDirs.getDirectories();
 
 		File modDir = new File(modDirString);
-		File[] vivaldiDirs = new File[vivaldiDirStrings.length];
-
-		for (int i = 0; i < vivaldiDirs.length; i++)
-			vivaldiDirs[i] = new File(vivaldiDirStrings[i]);
+		File[] vivaldiDirs = Arrays.stream(vivaldiDirStrings)
+				.map(File::new)
+				.toArray(s -> new File[s]);
 
 		List<Instruction> instructions = instructionsTable.getInstructions();
 
@@ -235,8 +229,7 @@ public class ModPanel extends JPanel
 
 	private void addInstruction()
 	{
-		if (fieldVivaldiDirs.getTexts().length == 0 || 
-				(fieldVivaldiDirs.getTexts().length == 1 && fieldVivaldiDirs.getTexts()[0].isEmpty()))
+		if (listVivaldiDirs.getDirectories().length == 0)
 		{
 			String title = "Please add a Vivaldi directory!";
 			String msg = "You cannot add instructions until have you have added a Vivaldi directory!";
@@ -255,7 +248,7 @@ public class ModPanel extends JPanel
 	private int showEditDialog(Instruction instruction)
 	{
 		File modDir = new File(fieldModDir.getTextfield().getText());
-		File vivaldiDir = new File(fieldVivaldiDirs.getTexts()[0]);
+		File vivaldiDir = new File(listVivaldiDirs.getDirectories()[0]);
 		return editDialog.show(instruction, modDir, vivaldiDir);
 	}
 
@@ -286,6 +279,21 @@ public class ModPanel extends JPanel
 
 		if (instructions.length > 0)
 			instructionsTable.removeInstructions(instructions);
+	}
+	
+	
+	private String[] showVivaldiDirSelector()
+	{
+		if (vivaldiDialog == null)
+		{
+		  String[] vivaldiDirs = listVivaldiDirs.getDirectories();
+		  
+		  vivaldiDialog = new VivaldiDirectoryDialog();
+		  if (vivaldiDirs.length > 0)
+		  	vivaldiDialog.setCurrentDirectory(vivaldiDirs[vivaldiDirs.length-1]);
+		}
+		
+		return vivaldiDialog.show(this);
 	}
 	
 	
@@ -321,60 +329,6 @@ public class ModPanel extends JPanel
 		if (saveData())
 			backend.applyMods(true, patchAll);
 	}
-	
-	
-	//CURRENT When MultiTextField is updated, the whole window is re-built, which cases it to flicker. 
-	
-	//TODO Also apply the "search for vivaldi dirs" thing when a path is selected via the browse button (see todo further up).
-	private FocusListener vivaldiDirFocusListener = new FocusListener()
-	{
-		@Override
-		public void focusLost(FocusEvent e)
-		{
-			JTextField field = (JTextField) e.getSource();
-			
-			File file = new File(field.getText());
-			
-			File parentVivaldi = DirectoryUtils.getParentVivaldiDir(file);
-			boolean isValidDir = false;
-			
-			if (parentVivaldi != null)
-			{
-				field.setText(parentVivaldi.getPath());
-				isValidDir = true;
-			}
-			else
-			{
-				List<File> vivaldiDirs = DirectoryUtils.findVivaldiDirs(file, 5);
-				
-				//FIXME Clearing the current field means re-layout even if the text in the field is unchanged!
-				field.setText("");
-				fieldVivaldiDirs.addRows(
-						vivaldiDirs.stream().map(File::getPath).toArray(s -> new String[s]));
-				isValidDir = !vivaldiDirs.isEmpty();
-			}
-			
-			if (!field.getText().isEmpty() && !isValidDir)
-			{
-				String msg = String.format("\"%s\" is not a valid Vivaldi directory (it doesn't contain any version folders)!", file);
-				String title = "Invalid Vivaldi directory!";
-				JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(field), msg, title, JOptionPane.ERROR_MESSAGE);
-				SwingUtilities.invokeLater(field::requestFocus);
-				field.setForeground(Color.RED);
-			}
-			else
-			{
-				field.setForeground(Color.BLACK);
-			}
-		}
-		
-		
-		@Override
-		public void focusGained(FocusEvent e)
-		{
-			//Not needed
-		}
-	};
 
 
 	private ListSelectionListener selectionListener = new ListSelectionListener()
