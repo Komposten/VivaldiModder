@@ -18,13 +18,63 @@
  */
 package komposten.vivaldi.util;
 
-import java.io.FileFilter;
+import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 public final class DirectoryUtils
 {
-	private DirectoryUtils() {}
+	private DirectoryUtils()
+	{}
+
+
+	public static List<File> findVivaldiVersionDirs(File vivaldiDir)
+	{
+		return findVivaldiVersionDirs(vivaldiDir, 0);
+	}
 	
-	public static final FileFilter vivaldiVersionFolderFilter = file -> file.isDirectory()
-			&& file.getName().matches("\\d+(\\.\\d+)+");
+	
+	public static List<File> findVivaldiVersionDirs(File vivaldiDir, int maxDepth)
+	{
+		List<File> dirs = new LinkedList<>();
+		File[] children = vivaldiDir.listFiles();
+
+		if (children != null)
+		{
+			for (File child : children)
+			{
+				if (isVersionDir(child))
+					dirs.add(child);
+				else if (maxDepth > 0)
+					dirs.addAll(findVivaldiVersionDirs(child, maxDepth-1));
+			}
+		}
+
+		return dirs;
+	}
+	
+	
+	public static boolean isVersionDir(File directory)
+	{
+		File[] resources = directory.listFiles((dir, name) -> name.equals("resources"));
+
+		if (resources != null && resources.length > 0)
+		{
+			File[] vivaldi = resources[0].listFiles((dir, name) -> name.equals("vivaldi"));
+
+			if (vivaldi != null && vivaldi.length > 0)
+			{
+				for (File file : vivaldi)
+				{
+					if (file.isDirectory())
+						return true;
+				}
+			}
+		}
+		
+		return false;
+	}
 }

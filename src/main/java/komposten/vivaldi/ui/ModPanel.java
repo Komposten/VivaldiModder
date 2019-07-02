@@ -330,9 +330,9 @@ public class ModPanel extends JPanel
 			JTextField field = (JTextField) e.getSource();
 			
 			File file = new File(field.getText());
-			File[] children = file.listFiles(DirectoryUtils.vivaldiVersionFolderFilter);
+			List<File> children = DirectoryUtils.findVivaldiVersionDirs(file);
 			
-			if (!field.getText().isEmpty() && (children == null || children.length == 0))
+			if (!field.getText().isEmpty() && children.isEmpty())
 			{
 				String msg = String.format("\"%s\" is not a valid Vivaldi directory (it doesn't contain any version folders)!", file);
 				String title = "Invalid Vivaldi directory!";
