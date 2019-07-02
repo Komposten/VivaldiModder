@@ -15,15 +15,17 @@ import javax.swing.SwingUtilities;
 public class VivaldiDirList extends JPanel
 {
 	private Supplier<String[]> directorySupplier;
+	private ActionListener openListener;
 	
 	private List<RemovableListItem> list;
 	private JPanel listPanel;
 	private JButton buttonAdd;
 
 	
-	public VivaldiDirList(Supplier<String[]> directorySupplier)
+	public VivaldiDirList(Supplier<String[]> directorySupplier, ActionListener openListener)
 	{
 		this.directorySupplier = directorySupplier;
+		this.openListener = openListener;
 		
 		list = new LinkedList<>();
 		listPanel = new JPanel(new GridBagLayout());
@@ -64,7 +66,7 @@ public class VivaldiDirList extends JPanel
 		for (String directory : directories)
 		{
 			if (!hasDirectory(directory))
-				addListItem(new RemovableListItem(directory, removeListener));
+				addListItem(new RemovableListItem(directory, openListener, removeListener));
 		}
 		
 		if (repack)

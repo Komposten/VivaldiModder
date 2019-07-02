@@ -12,15 +12,23 @@ import javax.swing.JTextField;
 public class RemovableListItem extends JPanel
 {
 	private JTextField field;
+	private JButton buttonOpen;
 	private JButton buttonRemove;
 	
 	
-	public RemovableListItem(String text, ActionListener removeListener)
+	public RemovableListItem(String text, ActionListener openListener, ActionListener removeListener)
 	{
 		field = new JTextField(text);
+		buttonOpen = new JButton("Open");
 		buttonRemove = new JButton("Remove");
 		
 		field.setEditable(false);
+		
+		if (openListener != null)
+		{
+			buttonOpen.addActionListener(
+					action -> openListener.actionPerformed(new ActionEvent(this, 0, "open")));
+		}
 		
 		if (removeListener != null)
 		{
@@ -42,6 +50,7 @@ public class RemovableListItem extends JPanel
 		add(field, constraints);
 		constraints.weightx = 0;
 		constraints.insets.left = 4;
+		add(buttonOpen, constraints);
 		add(buttonRemove, constraints);
 	}
 	

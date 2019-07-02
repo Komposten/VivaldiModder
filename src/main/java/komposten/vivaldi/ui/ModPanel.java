@@ -83,7 +83,8 @@ public class ModPanel extends JPanel
 		labelVivaldiDirs = new JLabel("Vivaldi directories:");
 		fieldModDir = new BrowseTextField("Choose your mod directory",
 				JFileChooser.DIRECTORIES_ONLY, this::open);
-		listVivaldiDirs = new VivaldiDirList(this::showVivaldiDirSelector);
+		listVivaldiDirs = new VivaldiDirList(this::showVivaldiDirSelector,
+				this::open);
 
 		instructionsTable = new InstructionTable();
 		instructionsTable.getSelectionModel().addListSelectionListener(selectionListener);
@@ -387,8 +388,8 @@ public class ModPanel extends JPanel
 		}
 		else
 		{
-			BrowseTextField field = (BrowseTextField) event.getSource();
-			directory = new File(field.getTextfield().getText());
+			RemovableListItem listItem = (RemovableListItem) event.getSource();
+			directory = new File(listItem.getText());
 		}
 		
 		try
