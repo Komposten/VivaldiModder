@@ -86,6 +86,7 @@ public class ModPanel extends JPanel
 		labelVivaldiDirs = new JLabel("Vivaldi directories:");
 		fieldModDir = new BrowseTextField("Choose your mod directory",
 				JFileChooser.DIRECTORIES_ONLY, this::open);
+		//TODO Add a BrowserListener to MultiTextField so we can know when a Vivaldi dir changes due to browsing.
 		fieldVivaldiDirs = new MultiTextField(this::open);
 		fieldVivaldiDirs.addTextFocusListener(vivaldiDirFocusListener);
 
@@ -322,6 +323,9 @@ public class ModPanel extends JPanel
 	}
 	
 	
+	//CURRENT When MultiTextField is updated, the whole window is re-built, which cases it to flicker. 
+	
+	//TODO Also apply the "search for vivaldi dirs" thing when a path is selected via the browse button (see todo further up).
 	private FocusListener vivaldiDirFocusListener = new FocusListener()
 	{
 		@Override
@@ -330,9 +334,27 @@ public class ModPanel extends JPanel
 			JTextField field = (JTextField) e.getSource();
 			
 			File file = new File(field.getText());
-			List<File> children = DirectoryUtils.findVivaldiVersionDirs(file);
 			
-			if (!field.getText().isEmpty() && children.isEmpty())
+			File parentVivaldi = DirectoryUtils.getParentVivaldiDir(file);
+			boolean isValidDir = false;
+			
+			if (parentVivaldi != null)
+			{
+				field.setText(parentVivaldi.getPath());
+				isValidDir = true;
+			}
+			else
+			{
+				List<File> vivaldiDirs = DirectoryUtils.findVivaldiDirs(file, 5);
+				
+				//FIXME Clearing the current field means re-layout even if the text in the field is unchanged!
+				field.setText("");
+				fieldVivaldiDirs.addRows(
+						vivaldiDirs.stream().map(File::getPath).toArray(s -> new String[s]));
+				isValidDir = !vivaldiDirs.isEmpty();
+			}
+			
+			if (!field.getText().isEmpty() && !isValidDir)
 			{
 				String msg = String.format("\"%s\" is not a valid Vivaldi directory (it doesn't contain any version folders)!", file);
 				String title = "Invalid Vivaldi directory!";

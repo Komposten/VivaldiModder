@@ -54,6 +54,60 @@ class DirectoryUtilsTest
 	
 	
 	@Test
+	void getParentVivaldiDir_validPaths_returnVivaldiDir() throws IOException
+	{
+		File vivaldiDir = getTestFile("testfolders/GetParentVivaldi/");
+		File versionDir = getTestFile("testfolders/GetParentVivaldi/Version1");
+		File resourceDir = getTestFile("testfolders/GetParentVivaldi/Version1/resources");
+		File vivaldiDir2 = getTestFile("testfolders/GetParentVivaldi/Version1/resources/vivaldi");
+		File versionFile = getTestFile("testfolders/GetParentVivaldi/Version1/File");
+		File vivaldiFile = getTestFile("testfolders/GetParentVivaldi/Version1/resources/vivaldi/File");
+
+		assertAll(
+				() -> assertEquals(vivaldiDir, DirectoryUtils.getParentVivaldiDir(versionDir), "/Version1"),
+				() -> assertEquals(vivaldiDir, DirectoryUtils.getParentVivaldiDir(resourceDir), "/Version1/resources"),
+				() -> assertEquals(vivaldiDir, DirectoryUtils.getParentVivaldiDir(vivaldiDir2), "/Version1/resources/vivaldi"),
+				() -> assertEquals(vivaldiDir, DirectoryUtils.getParentVivaldiDir(versionFile), "/Version1/File"),
+				() -> assertEquals(vivaldiDir, DirectoryUtils.getParentVivaldiDir(vivaldiFile), "/Version1/resources/vivaldi/File")
+		);
+	}
+	
+	
+	@Test
+	void getParentVivaldiDir_invalidPaths_returnNull() throws IOException
+	{
+		File styleDir = getTestFile("testfolders/GetParentVivaldi/Version1/resources/vivaldi/style");
+
+		assertNull(DirectoryUtils.getParentVivaldiDir(styleDir));
+	}
+	
+	
+	@Test
+	void findVivaldiDirs_maxDepth1_dontFindDepth2() throws IOException
+	{
+		File vivaldiDir = getTestFile("testfolders/FindVivaldiDirs");
+		List<File> vivaldiDirs = DirectoryUtils.findVivaldiDirs(vivaldiDir, 1);
+		
+		assertEquals(3, vivaldiDirs.size());
+		assertAll(() -> assertEquals("Vivaldi1", vivaldiDirs.get(0).getName()),
+				() -> assertEquals("Vivaldi2", vivaldiDirs.get(1).getName()),
+				() -> assertEquals("Vivaldi3", vivaldiDirs.get(2).getName()));
+	}
+	
+	
+	@Test
+	void findVivaldiDirs_multipleVersions_noDuplicates() throws IOException
+	{
+		File vivaldiDir = getTestFile("testfolders/FindVivaldiDirs2");
+		List<File> vivaldiDirs = DirectoryUtils.findVivaldiDirs(vivaldiDir, 1);
+		
+		assertEquals(2, vivaldiDirs.size());
+		assertAll(() -> assertEquals("Vivaldi1", vivaldiDirs.get(0).getName()),
+				() -> assertEquals("Vivaldi2", vivaldiDirs.get(1).getName()));
+	}
+	
+	
+	@Test
 	void findVivaldiVersionDirs_noDepth_dontFindDeep() throws IOException
 	{
 		File vivaldiDir = getTestFile("testfolders/FindVersionDirs");

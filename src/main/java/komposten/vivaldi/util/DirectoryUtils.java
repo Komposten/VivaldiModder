@@ -37,6 +37,17 @@ public final class DirectoryUtils
 	}
 	
 	
+	public static List<File> findVivaldiDirs(File dir, int maxDepth)
+	{
+		return findVivaldiVersionDirs(dir, maxDepth+1)
+				.stream()
+				.map(File::getParentFile)
+				.filter(Objects::nonNull)
+				.distinct()
+				.collect(Collectors.toList());
+	}
+
+
 	public static List<File> findVivaldiVersionDirs(File vivaldiDir, int maxDepth)
 	{
 		List<File> dirs = new LinkedList<>();
@@ -54,6 +65,35 @@ public final class DirectoryUtils
 		}
 
 		return dirs;
+	}
+	
+	
+	/**
+	 * Checks if <code>file</code> represents a directory, or a file in directory,
+	 * in the first 3 levels below a Vivaldi directory (i.e. a version folder or a
+	 * folder 1 or 2 steps below a version folder).
+	 * 
+	 * @param file
+	 * @return <code>null</code> if the <code>file</code> is not in a Vivaldi dir,
+	 *         otherwise a <code>File</code> instance for the Vivaldi directory.
+	 */
+	public static File getParentVivaldiDir(File file)
+	{
+		if (file.isFile())
+			file = file.getParentFile();
+		
+		for (int i = 0; i < 3; i++)
+		{
+			if (file.getParentFile() == null)
+				return null;
+			
+			if (DirectoryUtils.isVersionDir(file))
+				return file.getParentFile();
+			
+			file = file.getParentFile();
+		}
+		
+		return null;
 	}
 	
 	

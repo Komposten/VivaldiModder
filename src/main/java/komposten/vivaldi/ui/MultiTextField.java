@@ -25,7 +25,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusListener;
 import java.io.File;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
@@ -51,7 +54,7 @@ public class MultiTextField extends JPanel
 
 		docToFieldMap = new LinkedHashMap<>();
 
-		createRow();
+		createEmptyRow(true);
 	}
 	
 	
@@ -69,39 +72,50 @@ public class MultiTextField extends JPanel
 
 	public String[] getTexts()
 	{
-		String[] texts = new String[docToFieldMap.size() - 1];
-
-		int i = 0;
-		for (BrowseTextField field : docToFieldMap.values())
-		{
-			String text = field.getTextfield().getText();
-			if (!text.isEmpty())
-				texts[i++] = text;
-		}
-
-		return texts;
+		List<String> filteredTexts = docToFieldMap.values().stream()
+			.map(x -> x.getTextfield().getText())
+			.filter(x -> !x.trim().isEmpty())
+			.collect(Collectors.toList());
+		
+		return filteredTexts.toArray(new String[filteredTexts.size()]);
+	}
+	
+	
+	private void createEmptyRow(boolean repack)
+	{
+		createRow(null, repack);
 	}
 
 
-	private void createRow()
+	private void createRow(String text, boolean repack)
 	{
 		BrowseTextField textfield = new BrowseTextField(
 				"Choose a Vivaldi installation directory", JFileChooser.DIRECTORIES_ONLY,
 				openListener);
-		Document document = textfield.getTextfield().getDocument();
+		
+		if (text != null)
+		{
+			textfield.getTextfield().setText(text);
+			File directory = new File(text);
+			if (directory.exists() && directory.isDirectory())
+				textfield.setCurrentDirectory(directory);
+		}
+		
 		textfield.getTextfield().addFocusListener(textFocusListener);
 		
 		addRow(textfield, docToFieldMap.size());
 
-		docToFieldMap.put(document, textfield);
+		Document document = textfield.getTextfield().getDocument();
 		document.addDocumentListener(documentListener);
+		docToFieldMap.put(document, textfield);
 		lastTextfield = textfield;
 
-		repackFrame();
+		if (repack)
+			repackFrame();
 	}
 
 
-	private void repackFrame()
+	private void repackFrame( )
 	{
 		Window window = SwingUtilities.getWindowAncestor(this);
 
@@ -118,6 +132,20 @@ public class MultiTextField extends JPanel
 
 		textfield.getTextfield().getDocument().removeDocumentListener(documentListener);
 		layoutRows();
+	}
+	
+	
+	private void removeAllRows(boolean layout)
+	{
+		for (Document document : docToFieldMap.keySet())
+			document.removeDocumentListener(documentListener);
+		
+		docToFieldMap.clear();
+		
+		if (layout)
+			layoutRows();
+		else
+			removeAll();
 	}
 
 
@@ -148,17 +176,67 @@ public class MultiTextField extends JPanel
 
 	public void addRows(String... texts)
 	{
+		String[] oldTexts = getTexts();
+		String[] newTexts = distinct(texts, oldTexts);
+		
+		if (newTexts.length == 0)
+			return;
+		
 		SwingUtilities.invokeLater(() -> ignoreChangeEvents = true);
-		for (String text : texts)
+		removeAllRows(false);
+		
+		for (int i = 0; i < oldTexts.length + newTexts.length; i++)
 		{
-			lastTextfield.getTextfield().setText(text);
-			
-			File directory = new File(text);
-			if (directory.exists() && directory.isDirectory())
-				lastTextfield.setCurrentDirectory(directory);
-			createRow();
+			String text = (i < oldTexts.length ? oldTexts[i] : newTexts[i - oldTexts.length]);
+			createRow(text, false);
 		}
+
+		createEmptyRow(true);
 		SwingUtilities.invokeLater(() -> ignoreChangeEvents = false);
+	}
+
+
+	private String[] distinct(String[] texts, String[] checkAgainst)
+	{
+		List<String> distinct = new LinkedList<>();
+		
+		String[] originalTexts = texts;
+		texts = normalisePaths(texts);
+		checkAgainst = normalisePaths(checkAgainst);
+		
+		for (int i = 0; i < texts.length; i++)
+		{
+			boolean match = false;
+			for (String check : checkAgainst)
+			{
+				if (texts[i].equals(check))
+				{
+					match = true;
+					break;
+				}
+			}
+			
+			if (!match)
+				distinct.add(originalTexts[i]);
+		}
+		
+		return distinct.toArray(new String[distinct.size()]);
+	}
+
+
+	private String[] normalisePaths(String[] texts)
+	{
+		String[] normals = new String[texts.length];
+		
+		for (int i = 0; i < texts.length; i++)
+		{
+			normals[i] = texts[i].trim().replace('\\', '/');
+			
+			if (normals[i].endsWith("/"))
+				normals[i] = normals[i].substring(0, normals[i].length()-1);
+		}
+		
+		return normals;
 	}
 
 
@@ -168,6 +246,8 @@ public class MultiTextField extends JPanel
 		@Override
 		public void removeUpdate(DocumentEvent e)
 		{
+			//FIXME Browsing for a vivaldi dir replaces the text, which first removes it and then inserts new.
+			//				Because all text is first removed, the text field is removed!
 			if (ignoreChangeEvents)
 				return;
 
@@ -188,9 +268,9 @@ public class MultiTextField extends JPanel
 				return;
 
 			BrowseTextField textfield = docToFieldMap.get(e.getDocument());
-
+			
 			if (textfield == lastTextfield)
-				createRow();
+				createEmptyRow(true);
 		}
 
 
