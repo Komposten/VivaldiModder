@@ -117,4 +117,32 @@ public final class DirectoryUtils
 		
 		return false;
 	}
+	
+	
+	public static String assemblePath(String... elements)
+	{
+		StringBuilder builder = new StringBuilder();
+		
+		for (int i = 0; i < elements.length; i++)
+		{
+			String element = elements[i];
+			if (i == 0 || !(elements[i-1].endsWith("/") || elements[i-1].endsWith("\\")))
+			{
+				if (element.startsWith("/") || element.startsWith("\\"))
+					builder.append(element);
+				else
+					builder.append("/").append(element);
+			}
+			else if (element.startsWith("/") || element.startsWith("\\"))
+			{
+				builder.append(element.substring(1));
+			}
+			else
+			{
+				builder.append(element);
+			}
+		}
+		
+		return builder.toString();
+	}
 }

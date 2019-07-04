@@ -46,6 +46,7 @@ import komposten.utilities.logging.LogUtils;
 import komposten.vivaldi.backend.Backend;
 import komposten.vivaldi.backend.Instruction;
 import komposten.vivaldi.backend.ModConfig;
+import komposten.vivaldi.util.DirectoryUtils;
 
 
 public class ModPanel extends JPanel
@@ -287,9 +288,9 @@ public class ModPanel extends JPanel
 					String target = relativeTo.toPath().relativize(child.toPath()).toString();
 					
 					if (!onlyFolderContent)
-						target = assemblePath(targetDir, relativeTo.getName(), target);
+						target = DirectoryUtils.assemblePath(targetDir, relativeTo.getName(), target);
 					else
-						target = assemblePath(targetDir, target);
+						target = DirectoryUtils.assemblePath(targetDir, target);
 					
 					Instruction instruction = new Instruction(modFile, target, excludeFromBrowserHtml);
 					instructionsTable.addInstruction(instruction);
@@ -300,22 +301,6 @@ public class ModPanel extends JPanel
 				}
 			}
 		}
-	}
-	
-	
-	private String assemblePath(String... elements)
-	{
-		StringBuilder builder = new StringBuilder();
-		
-		for (String element : elements)
-		{
-			if (element.startsWith("/") || element.startsWith("\\"))
-				builder.append(element);
-			else
-				builder.append("/").append(element);
-		}
-		
-		return builder.toString();
 	}
 
 
