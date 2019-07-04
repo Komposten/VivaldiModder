@@ -75,9 +75,7 @@ public class Instruction implements Comparable<Instruction>
 		}
 		else if (!targetDirectory.equals(other.targetDirectory))
 			return false;
-		if (excludeFromBrowserHtml != other.excludeFromBrowserHtml)
-			return false;
-		return true;
+		return excludeFromBrowserHtml == other.excludeFromBrowserHtml;
 	}
 	
 	

@@ -65,6 +65,8 @@ public class Patcher
 
 		public void onPatchFinished(boolean success);
 	}
+	
+	private static final String LOG_RESULT_FORMAT = "  %s %s";
 
 
 	private Collection<PatchProgressListener> listeners;
@@ -360,7 +362,7 @@ public class Patcher
 			success = false;
 		}
 		
-		logger.log(null, String.format("  %s %s", getResultString(success), relativePath));
+		logger.log(null, String.format(LOG_RESULT_FORMAT, getResultString(success), relativePath));
 		return success;
 	}
 
@@ -388,7 +390,7 @@ public class Patcher
 			success = false;
 		}
 
-		logger.log(null, String.format("  %s %s", getResultString(success), relativePath));
+		logger.log(null, String.format(LOG_RESULT_FORMAT, getResultString(success), relativePath));
 		return success;
 	}
 	
@@ -562,7 +564,7 @@ public class Patcher
 		logger.log(null, String.format("%s ERROR%s OCCURRED", errors.size(), errors.size() != 1 ? "S" : ""));
 		for (LogMessage error : errors)
 		{
-			String message = String.format("  %s %s", getResultString(false), error.message);
+			String message = String.format(LOG_RESULT_FORMAT, getResultString(false), error.message);
 			logger.log(error.logLevel, error.location, message, error.throwable, false);
 		}
 		errors.clear();

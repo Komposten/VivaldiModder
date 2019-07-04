@@ -90,7 +90,7 @@ public class EditInstructionDialog extends JDialog
 		fieldTarget.setPreferredSize(new Dimension(340, fieldTarget.getPreferredSize().height));
 		
 		fieldMod.setBrowseListener(this::onModFileSelected);
-		fieldMod.getTextfield().addFocusListener(focusListener);
+		fieldMod.getTextfield().addFocusListener(modFieldFocusListener);
 		fieldTarget.setBrowseListener(file -> setRelativePath(fieldTarget, file, vivaldiDir));
 		buttonOk.addActionListener(action -> close(true));
 		buttonCancel.addActionListener(action -> close(false));
@@ -143,7 +143,7 @@ public class EditInstructionDialog extends JDialog
 	{
 		String modFile = fieldMod.getTextfield().getText();
 		String targetDir = fieldTarget.getTextfield().getText();
-		boolean exclude = (checkExcludeFromBrowser.isEnabled() ? checkExcludeFromBrowser.isSelected() : false);
+		boolean exclude = checkExcludeFromBrowser.isEnabled() && checkExcludeFromBrowser.isSelected();
 		
 		return new Instruction(modFile, targetDir, exclude);
 	}
@@ -329,7 +329,7 @@ public class EditInstructionDialog extends JDialog
 	}
 	
 	
-	private FocusListener focusListener = new FocusListener()
+	private FocusListener modFieldFocusListener = new FocusListener()
 	{
 		@Override
 		public void focusLost(FocusEvent e)
