@@ -89,7 +89,7 @@ public class EditInstructionDialog extends JDialog
 		
 		fieldTarget.setPreferredSize(new Dimension(340, fieldTarget.getPreferredSize().height));
 		
-		fieldMod.setBrowseListener(file -> setRelativePath(fieldMod, file, modDir));
+		fieldMod.setBrowseListener(this::onModFileSelected);
 		fieldMod.getTextfield().addFocusListener(focusListener);
 		fieldTarget.setBrowseListener(file -> setRelativePath(fieldTarget, file, vivaldiDir));
 		buttonOk.addActionListener(action -> close(true));
@@ -276,6 +276,13 @@ public class EditInstructionDialog extends JDialog
 		}
 		
 		return false;
+	}
+	
+	
+	private void onModFileSelected(File file)
+	{
+		setRelativePath(fieldMod, file, modDir);
+		updateCheckStates();
 	}
 	
 	
