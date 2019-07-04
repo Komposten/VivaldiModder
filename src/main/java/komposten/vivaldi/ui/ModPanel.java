@@ -264,8 +264,7 @@ public class ModPanel extends JPanel
 	{
 		File modDir = new File(fieldModDir.getTextfield().getText());
 		File directory = new File(modDir, instruction.sourceFile);
-		File target = new File(listVivaldiDirs.getDirectories()[0],
-				instruction.targetDirectory);
+		String target = instruction.targetDirectory;
 		
 		addInstructions(directory, directory, modDir, target,
 				instruction.excludeFromBrowserHtml, onlyContent, recursive);
@@ -273,7 +272,7 @@ public class ModPanel extends JPanel
 
 
 	private void addInstructions(File directory, File relativeTo, File modDir,
-			File targetDir, boolean excludeFromBrowserHtml, boolean onlyFolderContent,
+			String targetDir, boolean excludeFromBrowserHtml, boolean onlyFolderContent,
 			boolean recursive)
 	{
 		File[] children = directory.listFiles();
@@ -288,7 +287,9 @@ public class ModPanel extends JPanel
 					String target = relativeTo.toPath().relativize(child.toPath()).toString();
 					
 					if (!onlyFolderContent)
-						target = relativeTo.getName() + "/" + target;
+						target = assemblePath(targetDir, relativeTo.getName(), target);
+					else
+						target = assemblePath(targetDir, target);
 					
 					Instruction instruction = new Instruction(modFile, target, excludeFromBrowserHtml);
 					instructionsTable.addInstruction(instruction);
@@ -299,6 +300,22 @@ public class ModPanel extends JPanel
 				}
 			}
 		}
+	}
+	
+	
+	private String assemblePath(String... elements)
+	{
+		StringBuilder builder = new StringBuilder();
+		
+		for (String element : elements)
+		{
+			if (element.startsWith("/") || element.startsWith("\\"))
+				builder.append(element);
+			else
+				builder.append("/").append(element);
+		}
+		
+		return builder.toString();
 	}
 
 
