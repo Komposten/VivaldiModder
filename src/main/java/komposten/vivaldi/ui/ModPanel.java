@@ -46,6 +46,7 @@ import komposten.utilities.logging.LogUtils;
 import komposten.vivaldi.backend.Backend;
 import komposten.vivaldi.backend.Instruction;
 import komposten.vivaldi.backend.ModConfig;
+import komposten.vivaldi.util.DirectoryUtils;
 
 
 public class ModPanel extends JPanel
@@ -242,7 +243,64 @@ public class ModPanel extends JPanel
 			editDialog = new EditInstructionDialog(SwingUtilities.getWindowAncestor(this));
 		
 		if (showEditDialog(null) == EditInstructionDialog.RESULT_OK)
-			instructionsTable.addInstruction(editDialog.getInstruction());
+		{
+			Instruction instruction = editDialog.getInstruction();
+			File modFile = new File(fieldModDir.getTextfield().getText(), instruction.sourceFile);
+			
+			if (modFile.isDirectory())
+			{
+				addDirectoryInstruction(instruction, editDialog.getOnlyFolderContent(),
+						editDialog.getIncludeSubfolders());
+			}
+			else
+			{
+				instructionsTable.addInstruction(instruction);
+			}
+		}
+	}
+	
+
+	private void addDirectoryInstruction(Instruction instruction, boolean onlyContent, 
+			boolean recursive)
+	{
+		File modDir = new File(fieldModDir.getTextfield().getText());
+		File directory = new File(modDir, instruction.sourceFile);
+		String target = instruction.targetDirectory;
+		
+		addInstructions(directory, directory, modDir, target,
+				instruction.excludeFromBrowserHtml, onlyContent, recursive);
+	}
+
+
+	private void addInstructions(File directory, File relativeTo, File modDir,
+			String targetDir, boolean excludeFromBrowserHtml, boolean onlyFolderContent,
+			boolean recursive)
+	{
+		File[] children = directory.listFiles();
+		
+		if (children != null)
+		{
+			for (File child : children)
+			{
+				if (child.isFile())
+				{
+					String modFile = modDir.toPath().relativize(child.toPath()).toString();
+					String target = relativeTo.toPath().relativize(child.toPath()).toString();
+					
+					if (!onlyFolderContent)
+						target = DirectoryUtils.assemblePath(targetDir, relativeTo.getName(), target);
+					else
+						target = DirectoryUtils.assemblePath(targetDir, target);
+					
+					Instruction instruction = new Instruction(modFile, target, excludeFromBrowserHtml);
+					instructionsTable.addInstruction(instruction);
+				}
+				else if (child.isDirectory() && recursive)
+				{
+					addInstructions(child, relativeTo, modDir, targetDir, excludeFromBrowserHtml, onlyFolderContent, recursive);
+				}
+			}
+		}
 	}
 
 
