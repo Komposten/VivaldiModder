@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -75,11 +76,13 @@ class DirectoryUtilsTest
 	{
 		File vivaldiDir = TestUtils.getTestFile("testfolders/FindVivaldiDirs");
 		List<File> vivaldiDirs = DirectoryUtils.findVivaldiDirs(vivaldiDir, 1);
+		List<String> vivaldiNames = vivaldiDirs.stream().map(File::getName).collect(Collectors.toList());
 		
 		assertEquals(3, vivaldiDirs.size());
-		assertAll(() -> assertEquals("Vivaldi1", vivaldiDirs.get(0).getName()),
-				() -> assertEquals("Vivaldi2", vivaldiDirs.get(1).getName()),
-				() -> assertEquals("Vivaldi3", vivaldiDirs.get(2).getName()));
+
+		assertAll(() -> assertTrue(vivaldiNames.contains("Vivaldi1")),
+				() -> assertTrue(vivaldiNames.contains("Vivaldi2")),
+				() -> assertTrue(vivaldiNames.contains("Vivaldi3")));
 	}
 	
 	
@@ -88,10 +91,12 @@ class DirectoryUtilsTest
 	{
 		File vivaldiDir = TestUtils.getTestFile("testfolders/FindVivaldiDirs2");
 		List<File> vivaldiDirs = DirectoryUtils.findVivaldiDirs(vivaldiDir, 1);
+		List<String> vivaldiNames = vivaldiDirs.stream().map(File::getName).collect(Collectors.toList());
 		
 		assertEquals(2, vivaldiDirs.size());
-		assertAll(() -> assertEquals("Vivaldi1", vivaldiDirs.get(0).getName()),
-				() -> assertEquals("Vivaldi2", vivaldiDirs.get(1).getName()));
+
+		assertAll(() -> assertTrue(vivaldiNames.contains("Vivaldi1")),
+				() -> assertTrue(vivaldiNames.contains("Vivaldi2")));
 	}
 	
 	
@@ -100,11 +105,12 @@ class DirectoryUtilsTest
 	{
 		File vivaldiDir = TestUtils.getTestFile("testfolders/FindVersionDirs");
 		List<File> versionDirs = DirectoryUtils.findVivaldiVersionDirs(vivaldiDir);
+		List<String> versionNames = versionDirs.stream().map(File::getName).collect(Collectors.toList());
 		
 		assertEquals(3, versionDirs.size());
-		assertAll(() -> assertEquals("Version1", versionDirs.get(0).getName()),
-				() -> assertEquals("Version2", versionDirs.get(1).getName()),
-				() -> assertEquals("Version3", versionDirs.get(2).getName()));
+		assertAll(() -> assertTrue(versionNames.contains("Version1")),
+				() -> assertTrue(versionNames.contains("Version2")),
+				() -> assertTrue(versionNames.contains("Version3")));
 	}
 	
 	
@@ -113,12 +119,13 @@ class DirectoryUtilsTest
 	{
 		File vivaldiDir = TestUtils.getTestFile("testfolders/FindVersionDirs");
 		List<File> versionDirs = DirectoryUtils.findVivaldiVersionDirs(vivaldiDir, 1);
+		List<String> versionNames = versionDirs.stream().map(File::getName).collect(Collectors.toList());
 		
 		assertEquals(4, versionDirs.size());
-		assertAll(() -> assertEquals("Version1", versionDirs.get(0).getName()),
-				() -> assertEquals("Version2", versionDirs.get(1).getName()),
-				() -> assertEquals("Version3", versionDirs.get(2).getName()),
-				() -> assertEquals("Version4", versionDirs.get(3).getName()));
+		assertAll(() -> assertTrue(versionNames.contains("Version1")),
+				() -> assertTrue(versionNames.contains("Version2")),
+				() -> assertTrue(versionNames.contains("Version3")),
+				() -> assertTrue(versionNames.contains("Version4")));
 	}
 	
 	
