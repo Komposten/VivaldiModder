@@ -1,4 +1,5 @@
 # VivaldiModder
+[![Build Status](https://travis-ci.com/Komposten/VivaldiModder.svg?branch=master)](https://travis-ci.com/Komposten/VivaldiModder) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Komposten_VivaldiModder&metric=alert_status)](https://sonarcloud.io/dashboard?id=Komposten_VivaldiModder) [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Komposten_VivaldiModder&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=Komposten_VivaldiModder)
 ### What is VivaldiModder?
 VivaldiModder is a simple program for applying custom CSS and JavaScript modifications to local installations of the [Vivaldi web browser](https://vivaldi.com). VivaldiModder provides an interface for listing and editing mod files, and patching multiple Vivaldi installations at once with automatic back-up of any files that would be overwritten.
 
