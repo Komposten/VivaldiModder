@@ -231,13 +231,8 @@ public class ModPanel extends JPanel
 
 	private void addInstruction()
 	{
-		if (listVivaldiDirs.getDirectories().length == 0)
-		{
-			String title = "Please add a Vivaldi directory!";
-			String msg = "You cannot add instructions until have you have added a Vivaldi directory!";
-			JOptionPane.showMessageDialog(this, msg, title, JOptionPane.INFORMATION_MESSAGE);
+		if (!checkCanEdit())
 			return;
-		}
 		
 		if (editDialog == null)
 			editDialog = new EditInstructionDialog(SwingUtilities.getWindowAncestor(this));
@@ -257,6 +252,21 @@ public class ModPanel extends JPanel
 				instructionsTable.addInstruction(instruction);
 			}
 		}
+	}
+
+
+	private boolean checkCanEdit()
+	{
+		if (listVivaldiDirs.getDirectories().length == 0)
+		{
+			String title = "Please add a Vivaldi directory!";
+			String msg = "You cannot add or edit instructions until have you have added a Vivaldi directory!";
+			JOptionPane.showMessageDialog(this, msg, title, JOptionPane.INFORMATION_MESSAGE);
+			
+			return false;
+		}
+		
+		return true;
 	}
 	
 
@@ -323,6 +333,9 @@ public class ModPanel extends JPanel
 	
 	private void editInstruction(Instruction instruction)
 	{
+		if (!checkCanEdit())
+			return;
+		
 		if (editDialog == null)
 			editDialog = new EditInstructionDialog(SwingUtilities.getWindowAncestor(this));
 		
