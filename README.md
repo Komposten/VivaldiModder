@@ -25,9 +25,18 @@ VivaldiModder has been tested on Windows (Windows 10) and Linux (Zorin OS 15). I
 3) Run `mvn package`. Requires a JDK and Maven.
 4) Find the .jar and required libraries in `/target/packaged`.
 
-#### Running
-1) Run the .jar file using `javaw -jar VivaldiModder-[VERSION].jar [config-file]`.
-- `config-file` is a path to the config file to save the mod configurations to. `config.ini` is used as default if this parameter is not specified.
+#### Running with Java installed
+If you have Java installed, there are two ways to run VivaldiModder:
+1) By double-clicking the `VivaldiModder-[VERSION].jar` (on Windows)
+2) By using `javaw -jar VivaldiModder-[VERSION].jar [config-file]` in a shortcut or cmd/terminal (on Linux: use `java` instead of `javaw`).
+    - `config-file` is a path to the config file to save the mod configurations to. `config.ini` is used as default if this parameter is not specified.
+
+#### Running without installing Java
+VivaldiModder requires Java to run. However, if you don't want to install Java you can download a "copy-and-run" version that doesn't install anything and only runs when you tell it to run.
+1) Download a compressed (.zip or .tar.gz) Java runtime (and dev kit) from https://jdk.java.net/ and unzip it to your preferred location.
+2) Run VivaldiModder using `C:\path\to\java\bin\javaw.exe -jar VivaldiModder-[VERSION].jar [config-file]` in a shortcut or cmd/terminal (on Linux: use `java` instead of `javaw.exe`). 
+    - `config-file` is a path to the config file to save the mod configurations to. `config.ini` is used as default if this parameter is not specified.
+  
 
 ### Config file format
 The config files used by VivaldiModder use the format outlined below. Normally, you don't need to edit these files manually.
