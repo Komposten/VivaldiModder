@@ -58,6 +58,7 @@ public class EditInstructionDialog extends JDialog
 	private BrowseTextField fieldMod;
 	private BrowseTextField fieldTarget;
 	private JCheckBox checkExcludeFromBrowser;
+	private JCheckBox checkOnlyFolderContent;
 	private JCheckBox checkIncludeSubfolders;
 	private JButton buttonOk;
 	private JButton buttonCancel;
@@ -77,11 +78,13 @@ public class EditInstructionDialog extends JDialog
 		fieldMod = new BrowseTextField("Choose a mod file", JFileChooser.FILES_AND_DIRECTORIES, false, null);
 		fieldTarget = new BrowseTextField("Choose a target directory", JFileChooser.DIRECTORIES_ONLY, false, null);
 		checkExcludeFromBrowser = new JCheckBox("Exclude from browser.html");
+		checkOnlyFolderContent = new JCheckBox("Only copy folder content");
 		checkIncludeSubfolders = new JCheckBox("Include sub-folders");
 		buttonOk = new JButton("Ok");
 		buttonCancel = new JButton("Cancel");
 		
 		checkExcludeFromBrowser.setToolTipText(Strings.EDIT_INSTRUCTION_EXCLUDE_TOOLTIP);
+		checkOnlyFolderContent.setToolTipText(Strings.EDIT_INSTRUCTION_FOLDER_CONTENT);
 		checkIncludeSubfolders.setToolTipText(Strings.EDIT_INSTRUCTION_INCLUDE_SUBFOLDERS);
 		
 		fieldTarget.setPreferredSize(new Dimension(340, fieldTarget.getPreferredSize().height));
@@ -121,6 +124,8 @@ public class EditInstructionDialog extends JDialog
 		constraints.gridwidth = 2;
 		add(checkExcludeFromBrowser, constraints);
 		constraints.gridy++;
+		add(checkOnlyFolderContent, constraints);
+		constraints.gridy++;
 		add(checkIncludeSubfolders, constraints);
 		constraints.gridx = 0;
 		constraints.gridy++;
@@ -150,6 +155,12 @@ public class EditInstructionDialog extends JDialog
 	}
 	
 	
+	public boolean getOnlyFolderContent()
+	{
+		return checkOnlyFolderContent.isEnabled() && checkOnlyFolderContent.isSelected();
+	}
+	
+	
 	public int show(Instruction instruction, File modDir, File vivaldiDir)
 	{
 		this.modDir = modDir;
@@ -170,6 +181,7 @@ public class EditInstructionDialog extends JDialog
 			setTitle("Edit instruction");
 		}
 		
+		checkOnlyFolderContent.setSelected(false);
 		checkIncludeSubfolders.setSelected(false);
 		
 		updateCheckStates();
@@ -190,6 +202,7 @@ public class EditInstructionDialog extends JDialog
 		String modFile = fieldMod.getTextfield().getText();
 		boolean isModDirectory = new File(modDir, modFile).isDirectory();
 		checkExcludeFromBrowser.setEnabled(isModDirectory || Utilities.isStyle(modFile) || Utilities.isScript(modFile));
+		checkOnlyFolderContent.setEnabled(isModDirectory);
 		checkIncludeSubfolders.setEnabled(isModDirectory);
 	}
 

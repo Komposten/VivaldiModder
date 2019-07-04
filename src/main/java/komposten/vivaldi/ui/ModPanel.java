@@ -244,15 +244,12 @@ public class ModPanel extends JPanel
 		if (showEditDialog(null) == EditInstructionDialog.RESULT_OK)
 		{
 			Instruction instruction = editDialog.getInstruction();
-			File modDir = new File(fieldModDir.getTextfield().getText());
-			File modFile = new File(modDir, instruction.sourceFile);
+			File modFile = new File(fieldModDir.getTextfield().getText(), instruction.sourceFile);
 			
 			if (modFile.isDirectory())
 			{
-				File targetDir = new File(listVivaldiDirs.getDirectories()[0],
-						instruction.targetDirectory);
-				addInstructions(modFile, modFile, modDir, targetDir,
-						instruction.excludeFromBrowserHtml, editDialog.getIncludeSubfolders());
+				addDirectoryInstruction(instruction, editDialog.getOnlyFolderContent(),
+						editDialog.getIncludeSubfolders());
 			}
 			else
 			{
@@ -260,10 +257,24 @@ public class ModPanel extends JPanel
 			}
 		}
 	}
+	
+
+	private void addDirectoryInstruction(Instruction instruction, boolean onlyContent, 
+			boolean recursive)
+	{
+		File modDir = new File(fieldModDir.getTextfield().getText());
+		File directory = new File(modDir, instruction.sourceFile);
+		File target = new File(listVivaldiDirs.getDirectories()[0],
+				instruction.targetDirectory);
+		
+		addInstructions(directory, directory, modDir, target,
+				instruction.excludeFromBrowserHtml, onlyContent, recursive);
+	}
 
 
 	private void addInstructions(File directory, File relativeTo, File modDir,
-			File targetDir, boolean excludeFromBrowserHtml, boolean recursive)
+			File targetDir, boolean excludeFromBrowserHtml, boolean onlyFolderContent,
+			boolean recursive)
 	{
 		File[] children = directory.listFiles();
 		
@@ -274,14 +285,17 @@ public class ModPanel extends JPanel
 				if (child.isFile())
 				{
 					String modFile = modDir.toPath().relativize(child.toPath()).toString();
-					String target = relativeTo.getName() + "/" + relativeTo.toPath().relativize(child.toPath()).toString();
+					String target = relativeTo.toPath().relativize(child.toPath()).toString();
+					
+					if (!onlyFolderContent)
+						target = relativeTo.getName() + "/" + target;
 					
 					Instruction instruction = new Instruction(modFile, target, excludeFromBrowserHtml);
 					instructionsTable.addInstruction(instruction);
 				}
 				else if (child.isDirectory() && recursive)
 				{
-					addInstructions(child, relativeTo, modDir, targetDir, excludeFromBrowserHtml, recursive);
+					addInstructions(child, relativeTo, modDir, targetDir, excludeFromBrowserHtml, onlyFolderContent, recursive);
 				}
 			}
 		}
