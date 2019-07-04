@@ -242,7 +242,49 @@ public class ModPanel extends JPanel
 			editDialog = new EditInstructionDialog(SwingUtilities.getWindowAncestor(this));
 		
 		if (showEditDialog(null) == EditInstructionDialog.RESULT_OK)
-			instructionsTable.addInstruction(editDialog.getInstruction());
+		{
+			Instruction instruction = editDialog.getInstruction();
+			File modDir = new File(fieldModDir.getTextfield().getText());
+			File modFile = new File(modDir, instruction.sourceFile);
+			
+			if (modFile.isDirectory())
+			{
+				File targetDir = new File(listVivaldiDirs.getDirectories()[0],
+						instruction.targetDirectory);
+				addInstructions(modFile, modFile, modDir, targetDir,
+						instruction.excludeFromBrowserHtml, editDialog.getIncludeSubfolders());
+			}
+			else
+			{
+				instructionsTable.addInstruction(instruction);
+			}
+		}
+	}
+
+
+	private void addInstructions(File directory, File relativeTo, File modDir,
+			File targetDir, boolean excludeFromBrowserHtml, boolean recursive)
+	{
+		File[] children = directory.listFiles();
+		
+		if (children != null)
+		{
+			for (File child : children)
+			{
+				if (child.isFile())
+				{
+					String modFile = modDir.toPath().relativize(child.toPath()).toString();
+					String target = relativeTo.getName() + "/" + relativeTo.toPath().relativize(child.toPath()).toString();
+					
+					Instruction instruction = new Instruction(modFile, target, excludeFromBrowserHtml);
+					instructionsTable.addInstruction(instruction);
+				}
+				else if (child.isDirectory() && recursive)
+				{
+					addInstructions(child, relativeTo, modDir, targetDir, excludeFromBrowserHtml, recursive);
+				}
+			}
+		}
 	}
 
 
