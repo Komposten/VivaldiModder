@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
@@ -128,5 +129,39 @@ class DirectoryUtilsTest
 		List<File> versionDirs = DirectoryUtils.findVivaldiVersionDirs(vivaldiDir, 1);
 		
 		assertEquals(0, versionDirs.size());
+	}
+	
+	
+	@Test
+	void assemblePath()
+	{
+		String expected = "/aaa/bbb/ccc/ddd";
+		assertAll(
+			() -> assertEquals(expected, DirectoryUtils.assemblePath("aaa", "bbb", "ccc", "ddd")),
+			() -> assertEquals(expected, DirectoryUtils.assemblePath("aaa/", "bbb/", "ccc/", "ddd")),
+			() -> assertEquals(expected, DirectoryUtils.assemblePath("/aaa", "/bbb", "/ccc", "/ddd")),
+			() -> assertEquals(expected, DirectoryUtils.assemblePath("/aaa/", "/bbb/", "/ccc/", "/ddd")),
+			() -> assertEquals(expected, DirectoryUtils.assemblePath("/aaa", "bbb/", "/ccc", "ddd"))
+		);
+	}
+	
+	
+	@Test
+	void assemblePath_backslashAndForwardSlash_treatAsTheSame()
+	{
+		String pattern = "[/\\\\]aaa[/\\\\]bbb[/\\\\]ccc[/\\\\]ddd";
+
+		assertAll(
+				() -> assertTrue(Pattern.matches(pattern,
+						DirectoryUtils.assemblePath("aaa/", "bbb\\", "ccc\\", "ddd"))),
+				() -> assertTrue(Pattern.matches(pattern,
+						DirectoryUtils.assemblePath("aaa\\", "/bbb/", "\\ccc\\", "/ddd"))));
+	}
+	
+	
+	@Test
+	void assemblePath_noArguments_emptyString()
+	{
+		assertEquals("", DirectoryUtils.assemblePath());
 	}
 }
