@@ -20,6 +20,7 @@ package komposten.vivaldi.ui;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.Serializable;
@@ -41,6 +42,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import komposten.vivaldi.backend.Instruction;
+import komposten.vivaldi.util.DirectoryUtils;
 import komposten.vivaldi.util.Strings;
 import komposten.vivaldi.util.Utilities;
 
@@ -374,9 +376,30 @@ public class InstructionTable extends JTable
 			else
 			{
 				component.setHorizontalAlignment(SwingConstants.LEADING);
+				adjustTextLength(table, component, column);
 			}
 			
 			return component;
+		}
+
+		private void adjustTextLength(JTable table, JLabel label, int column)
+		{
+			FontMetrics metrics = label.getFontMetrics(label.getFont());
+			String fullText = label.getText();
+			String text = fullText;
+			int colWidth = table.getColumnModel().getColumn(column).getWidth();
+			float bufferWidth = Math.min(colWidth * 0.8f, 25);
+			int index = 0;
+			
+			while (metrics.stringWidth(text) > colWidth - bufferWidth)
+			{
+				text = DirectoryUtils.truncatePath(fullText, index++);
+				
+				if (text.length() == 3)
+					break;
+			}
+			
+			label.setText(text);
 		}
 	}
 	

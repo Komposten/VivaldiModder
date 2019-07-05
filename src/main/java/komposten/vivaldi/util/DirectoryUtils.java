@@ -151,4 +151,66 @@ public final class DirectoryUtils
 		
 		return builder.toString();
 	}
+	
+	
+	/**
+	 * Truncates the provided path by removing at least the provided number of characters.<br />
+	 * First middle elements are removed:
+	 * <pre>/resources/vivaldi/style/file.css -> /resources/.../style/file.css</pre>
+	 * 
+	 * If this is not enough, the path is truncated from the beginning:
+	 * <pre>/resources/vivaldi/style/file.css -> .../style/file.css</pre>
+	 * @param path The path to truncate
+	 * @param chars The minimum number of characters to remove. 
+	 */
+	public static String truncatePath(String path, int chars)
+	{
+		int firstSep = getSeparator(path, 0, false);
+		int lastElement = getSeparator(path, path.length()-2, true);
+		int lastElementLength = path.length() - lastElement;
+		
+		if (chars == 0)
+		{
+			return path;
+		}
+		else if (firstSep == -1 || path.length() - (firstSep + 1) < chars + lastElementLength)
+		{
+			return "..." + path.substring(chars);
+		}
+		else
+		{
+			int secondSep = firstSep;
+			
+			while (secondSep - firstSep < chars+1)
+			{
+				secondSep = getSeparator(path, secondSep+1, false);
+				
+				if (secondSep == -1)
+					secondSep = firstSep + chars+1;
+			}
+			
+			String start = path.substring(0, firstSep+1);
+			String end = path.substring(secondSep);
+			return start + "..." + end;
+		}
+	}
+	
+
+	private static int getSeparator(String fullText, int fromIndex, boolean reverse)
+	{
+		if (!reverse)
+		{
+			int sep = fullText.indexOf('/', fromIndex);
+			if (sep == -1)
+				sep = fullText.indexOf('\\', fromIndex);
+			return sep;
+		}
+		else
+		{
+			int sep = fullText.lastIndexOf('/', fromIndex);
+			if (sep == -1)
+				sep = fullText.lastIndexOf('\\', fromIndex);
+			return sep;
+		}
+	}
 }

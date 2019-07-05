@@ -171,4 +171,30 @@ class DirectoryUtilsTest
 	{
 		assertEquals("", DirectoryUtils.assemblePath());
 	}
+	
+	
+	@Test
+	void truncatePath_zeroChars_removeNothing()
+	{
+		String path = "this/is/a/path/";
+		assertEquals(path, DirectoryUtils.truncatePath(path, 0));
+	}
+	
+	
+	@Test
+	void truncatePath_someChars_removeMiddlePartsFirst()
+	{
+		String path = "this/is/a/path/with/many/elements/";
+		String expected = "this/.../with/many/elements/";
+		assertEquals(expected, DirectoryUtils.truncatePath(path, 9));
+	}
+	
+	
+	@Test
+	void truncatePath_mostChars_removeFromBeginningToPreserveEnd()
+	{
+		String path = "this/is/a/path/with/many/elements/";
+		String expected = "...y/elements/";
+		assertEquals(expected, DirectoryUtils.truncatePath(path, 23));
+	}
 }
