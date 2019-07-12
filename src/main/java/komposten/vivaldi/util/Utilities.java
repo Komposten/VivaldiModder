@@ -18,6 +18,8 @@
  */
 package komposten.vivaldi.util;
 
+import java.util.Arrays;
+
 public class Utilities
 {
 	private static final String[] SCRIPT_EXTENSIONS = {
@@ -29,6 +31,18 @@ public class Utilities
 	};
 	
 	private Utilities() {}
+
+	
+	public static String[] getScriptExtensions()
+	{
+		return Arrays.copyOf(SCRIPT_EXTENSIONS, SCRIPT_EXTENSIONS.length);
+	}
+	
+	
+	public static String[] getStyleExtensions()
+	{
+		return Arrays.copyOf(STYLE_EXTENSIONS, STYLE_EXTENSIONS.length);
+	}
 	
 	
 	public static boolean isStyle(String file)
