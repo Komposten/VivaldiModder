@@ -18,13 +18,7 @@
  */
 package komposten.vivaldi.util;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-
-import komposten.utilities.data.Range;
-import komposten.utilities.tools.Regex;
 
 public class Utilities
 {

@@ -32,6 +32,7 @@ import komposten.utilities.logging.Level;
 import komposten.utilities.logging.LogUtils;
 import komposten.utilities.tools.FileOperations;
 import komposten.vivaldi.util.DirectoryUtils;
+import komposten.vivaldi.util.Utilities;
 
 
 public class ModConfig
@@ -134,7 +135,7 @@ public class ModConfig
 		}
 	}
 
-
+	
 	private String[] splitQuotedArray(String arrayString)
 	{
 		if (arrayString.charAt(0) == '"')
@@ -143,27 +144,26 @@ public class ModConfig
 			int start = 0;
 			int end = -1;
 
-			for (int i = 1; i < arrayString.length(); i++)
+			while ((start = Utilities.indexOfUnescapedQuote(arrayString, end+1)) != -1)
 			{
-				if (arrayString.charAt(i) == '"')
+				end = Utilities.indexOfUnescapedQuote(arrayString, start+1);
+				
+				if (end != -1)
 				{
-					if (start > end)
-					{
-						end = i;
-						strings.add(arrayString.substring(start + 1, end));
-					}
-					else
-					{
-						start = i;
-					}
+					String substring = arrayString.substring(start + 1, end);
+					strings.add(Utilities.unescapeQuotes(substring));
+				}
+				else
+				{
+					break;
 				}
 			}
-
+			
 			return strings.toArray(new String[strings.size()]);
 		}
 		else
 		{
-			return new String[] { arrayString };
+			return new String[] { Utilities.unescapeQuotes(arrayString )};
 		}
 	}
 
@@ -316,7 +316,9 @@ public class ModConfig
 		{
 			if (i != 0)
 				builder.append(',');
-			builder.append('"').append(dirs[i].getPath()).append('"');
+			
+			String path = Utilities.escapeQuotes(dirs[i].getPath());
+			builder.append('"').append(path).append('"');
 		}
 		return builder.toString();
 	}
