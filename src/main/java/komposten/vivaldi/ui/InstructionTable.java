@@ -229,13 +229,21 @@ public class InstructionTable extends JTable
 				String result = prefix + dir;
 
 				int navUpIndex;
-				while ((navUpIndex = result.indexOf("../")) != -1)
+				int startIndex = 0;
+				while ((navUpIndex = result.indexOf("../", startIndex)) != -1)
 				{
-					int previousSlash = result.lastIndexOf('/', navUpIndex);
-
-					if (previousSlash != -1)
+					int previousSlash = result.lastIndexOf('/', navUpIndex-2);
+					
+					if (previousSlash != -1 && previousSlash >= startIndex)
+					{
 						result = result.substring(0, previousSlash)
 								+ result.substring(navUpIndex + 2);
+						startIndex = 0;
+					}
+					else
+					{
+						startIndex = navUpIndex+1;
+					}
 				}
 
 				return new Instruction(src, result, original.excludeFromBrowserHtml);
