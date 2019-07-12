@@ -18,7 +18,13 @@
  */
 package komposten.vivaldi.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+
+import komposten.utilities.data.Range;
+import komposten.utilities.tools.Regex;
 
 public class Utilities
 {
@@ -66,5 +72,33 @@ public class Utilities
 		}
 		
 		return false;
+	}
+	
+	
+	public static String escapeQuotes(String string)
+	{
+		return string.replace("\\", "\\\\").replace("\"", "\\\"");
+	}
+	
+	
+	public static String unescapeQuotes(String string)
+	{
+		return string.replace("\\\"", "\"").replace("\\\\", "\\");
+	}
+	
+	
+	public static int indexOfUnescapedQuote(String string, int from)
+	{
+		int quoteIndex;
+		
+		while ((quoteIndex = string.indexOf('"', from)) != -1)
+		{
+			if (string.substring(0, quoteIndex).matches("(^|.*[^\\\\])\\\\(\\\\\\\\)*$"))
+				from = quoteIndex + 1;
+			else
+				return quoteIndex;
+		}
+		
+		return -1;
 	}
 }
