@@ -100,11 +100,7 @@ public class ModConfig
 
 	private void parseLine(String line)
 	{
-		if (line.startsWith("#"))
-		{
-			return;
-		}
-		else if (line.startsWith("mod.dir"))
+		if (line.startsWith("mod.dir"))
 		{
 			modDir = new File(line.substring(line.indexOf('=') + 1).trim());
 		}
@@ -124,14 +120,28 @@ public class ModConfig
 				vivaldiDirs[i] = vivaldiDir;
 			}
 		}
-		else if (line.contains(">"))
+		else if (!line.startsWith("#"))
 		{
-			String[] split = line.split("[>|]");
+			parseInstruction(line);
+		}
+	}
 
-			String source = split[0].trim();
-			String target = (split.length > 1 ? split[1].trim() : "");
-			boolean exclude = (split.length > 2 && split[2].trim().equals("exclude"));
-			instructions.add(new Instruction(source, target, exclude));
+
+	private void parseInstruction(String line)
+	{
+		int modStart = Utilities.indexOfUnescapedQuote(line, 0);
+		int modEnd = Utilities.indexOfUnescapedQuote(line, modStart+1);
+		int targetStart = Utilities.indexOfUnescapedQuote(line, modEnd+1);
+		int targetEnd = Utilities.indexOfUnescapedQuote(line, targetStart+1);
+		
+		if (modStart != -1 && modEnd != -1 && targetStart != -1 && targetEnd != -1 &&
+				line.substring(modEnd+1, targetStart).matches("\\s*>\\s*"))
+		{
+			String mod = Utilities.unescapeQuotes(line.substring(modStart+1, modEnd));
+			String target = Utilities.unescapeQuotes(line.substring(targetStart+1, targetEnd));
+			boolean exclude = line.substring(targetEnd+1).matches("\\s*\\|\\s*exclude\\s*");
+			
+			instructions.add(new Instruction(mod, target, exclude));
 		}
 	}
 
@@ -283,7 +293,13 @@ public class ModConfig
 			StringBuilder builder = new StringBuilder();
 			for (Instruction instruction : instructions)
 			{
-				builder.append('\n').append(instruction.sourceFile).append('>').append(instruction.targetDirectory);
+				String source = Utilities.escapeQuotes(instruction.sourceFile);
+				String target = Utilities.escapeQuotes(instruction.targetDirectory);
+				
+				builder.append('\n')
+					.append('"').append(source).append('"')
+					.append('>')
+					.append('"').append(target).append('"');
 				if (instruction.excludeFromBrowserHtml)
 					builder.append("|exclude");
 			}
