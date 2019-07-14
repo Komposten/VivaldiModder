@@ -99,7 +99,11 @@ public class ModConfig
 
 	private void parseLine(String line)
 	{
-		if (line.startsWith("mod.dir"))
+		if (line.startsWith("#"))
+		{
+			return;
+		}
+		else if (line.startsWith("mod.dir"))
 		{
 			modDir = new File(line.substring(line.indexOf('=') + 1).trim());
 		}
