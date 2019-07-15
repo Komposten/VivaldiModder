@@ -304,6 +304,9 @@ public class EditInstructionDialog extends JDialog
 		if (isFileInDirectory(file, relativeTo, true))
 		{
 			path = path.replace(relativeTo.getAbsolutePath(), "");
+			
+			if (path.startsWith("/") || path.startsWith("\\"))
+				path = path.substring(1);
 		}
 		
 		browseField.getTextfield().setText(path.replace('\\', '/'));

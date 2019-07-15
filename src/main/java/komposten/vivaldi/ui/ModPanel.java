@@ -295,7 +295,7 @@ public class ModPanel extends JPanel
 				if (child.isFile())
 				{
 					String modFile = modDir.toPath().relativize(child.toPath()).toString();
-					String target = relativeTo.toPath().relativize(child.toPath()).toString();
+					String target = relativeTo.toPath().relativize(directory.toPath()).toString();
 					
 					if (!onlyFolderContent)
 						target = DirectoryUtils.assemblePath(targetDir, relativeTo.getName(), target);

@@ -19,6 +19,7 @@
 package komposten.vivaldi.util;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -126,7 +127,12 @@ public final class DirectoryUtils
 		for (int i = 0; i < elements.length; i++)
 		{
 			String element = elements[i];
-			if (i == 0 || !(elements[i-1].endsWith("/") || elements[i-1].endsWith("\\")))
+			
+			if (element.isEmpty())
+			{
+				continue;
+			}
+			else if (i == 0 || !(elements[i-1].endsWith("/") || elements[i-1].endsWith("\\")))
 			{
 				if (element.startsWith("/") || element.startsWith("\\"))
 					builder.append(element);
