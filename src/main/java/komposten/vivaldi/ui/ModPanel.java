@@ -74,7 +74,10 @@ public class ModPanel extends JPanel
 	private EditInstructionDialog editDialog;
 	private VivaldiDirectoryDialog vivaldiDialog;
 
-	public ModPanel(String configPath)
+	/**
+	 * @throws IOException If an I/O error occurred while reading the config file.
+	 */
+	public ModPanel(String configPath) throws IOException
 	{
 		super(new GridBagLayout());
 
@@ -170,7 +173,23 @@ public class ModPanel extends JPanel
 
 		addInitialData();
 
-		backend.start();
+		startBackend();
+	}
+
+
+	private void startBackend()
+	{
+		if (!backend.start())
+		{
+			StringBuilder builder = new StringBuilder();
+			builder.append(String.format("The config contains %d errors:", backend.getConfigErrors().size()));
+			
+			for (String error : backend.getConfigErrors())
+				builder.append("\n").append(error);
+			
+			JOptionPane.showMessageDialog(null, builder.toString(), "Invalid config!",
+					JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 

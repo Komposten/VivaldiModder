@@ -19,7 +19,6 @@
 package komposten.vivaldi.backend;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
@@ -33,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import javax.swing.JOptionPane;
 
 import komposten.utilities.data.Settings;
 import komposten.utilities.logging.ExceptionHandler;
@@ -54,11 +51,12 @@ public class Backend
 	static final String VERSION_PATTERN = "(\\d+\\.)+\\d+";
 
 	private static final String FILE_SETTINGS = "settings.ini";
-	static final String FILE_CONFIG = "config.ini";
 	static final String FILE_PATCHED = "PATCHED";
 	public static final String FILE_PATCHLOG = "patchlog.txt";
 	
 	private final String configPath;
+	
+	private List<String> configErrors;
 
 	private WatchService watchService;
 	private Map<WatchKey, File> keyToDirMap;
@@ -73,12 +71,14 @@ public class Backend
 	private WorkerThread workerThread;
 
 
-	public Backend(String configPath)
+	public Backend(String configPath) throws IOException
 	{
 		if (!LogUtils.hasInitialised())
 			LogUtils.writeToFile("log.txt");
+		if (configPath == null)
+			throw new NullPointerException("configPath must not be null!");
 		
-		this.configPath = (configPath != null ? configPath : FILE_CONFIG);
+		this.configPath = configPath;
 
 		workerThread = new WorkerThread();
 		workerThread.start();
@@ -93,7 +93,7 @@ public class Backend
 	}
 
 
-	public void start()
+	public boolean start()
 	{
 		boolean configValid = validateModConfig();
 
@@ -105,6 +105,8 @@ public class Backend
 			if (appConfig.getBoolean(SETTING_WATCH, true) && addFileWatchers())
 				startFileWatch();
 		}
+		
+		return configValid;
 	}
 
 
@@ -117,6 +119,12 @@ public class Backend
 	public ModConfig getModConfig()
 	{
 		return modConfig;
+	}
+	
+	
+	public List<String> getConfigErrors()
+	{
+		return configErrors;
 	}
 	
 	
@@ -143,56 +151,29 @@ public class Backend
 	}
 
 
-	private void loadConfigs()
+	private void loadConfigs() throws IOException
 	{
 		appConfig = new Settings(FILE_SETTINGS);
-
-		try
-		{
-			modConfig = new ModConfig(new File(configPath));
-		}
-		catch (FileNotFoundException e)
-		{
-			//FIXME Don't show UI messages in the backend!
-			String title = "Could not load the config!";
-			String msg = String.format("The config file (%s) could not be found!"
-					+ "%nStarting with an empty config.", configPath);
-			JOptionPane.showMessageDialog(null, msg, title, JOptionPane.ERROR_MESSAGE);
-			LogUtils.log(Level.ERROR, getClass().getSimpleName(), msg, e, false);
-
-			modConfig = new ModConfig(new File(configPath), null, null, null);
-		}
-		catch (IOException e)
-		{
-			String title = "Could not load the config!";
-			String msg = String.format("The config file (%s) could not be read:"
-					+ "%n%s", configPath, e.getMessage());
-			JOptionPane.showMessageDialog(null, msg, title, JOptionPane.ERROR_MESSAGE);
-			LogUtils.log(Level.ERROR, getClass().getSimpleName(), msg, e, false);
-		}
+		modConfig = new ModConfig(new File(configPath));
 	}
 
 
 	private boolean validateModConfig()
 	{
-		List<String> errors = modConfig.validate();
+		configErrors = modConfig.validate();
 
-		if (!errors.isEmpty())
+		if (!configErrors.isEmpty())
 		{
 			StringBuilder builder = new StringBuilder();
-			builder.append(String.format("The config contains %d errors:", errors.size()));
+			builder.append(String.format("The config contains %d errors:", configErrors.size()));
 
-			for (String error : errors)
+			for (String error : configErrors)
 				builder.append("\n" + error);
 
 			LogUtils.log(Level.ERROR, builder.toString());
-
-			//FIXME Don't show UI messages in the backend!
-			JOptionPane.showMessageDialog(null, builder.toString(), "Invalid config!",
-					JOptionPane.ERROR_MESSAGE);
 		}
 
-		return errors.isEmpty();
+		return configErrors.isEmpty();
 	}
 
 

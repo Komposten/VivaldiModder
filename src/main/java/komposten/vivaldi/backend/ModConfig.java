@@ -21,7 +21,6 @@ package komposten.vivaldi.backend;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,7 +41,7 @@ public class ModConfig
 	private List<Instruction> instructions;
 
 
-	public ModConfig(File file) throws FileNotFoundException, IOException
+	public ModConfig(File file) throws IOException
 	{
 		this(file, null, null, null);
 		parseFile(file);
@@ -84,14 +83,17 @@ public class ModConfig
 	}
 
 
-	private void parseFile(File file) throws FileNotFoundException, IOException
+	private void parseFile(File file) throws IOException
 	{
-		try (BufferedReader reader = new BufferedReader(new FileReader(file)))
+		if (file.exists())
 		{
-			String line;
-			while ((line = reader.readLine()) != null)
+			try (BufferedReader reader = new BufferedReader(new FileReader(file)))
 			{
-				parseLine(line.trim());
+				String line;
+				while ((line = reader.readLine()) != null)
+				{
+					parseLine(line.trim());
+				}
 			}
 		}
 	}
