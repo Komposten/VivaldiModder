@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.swing.JOptionPane;
-
 import komposten.utilities.data.Settings;
 import komposten.utilities.logging.ExceptionHandler;
 import komposten.utilities.logging.Level;
@@ -57,6 +55,8 @@ public class Backend
 	public static final String FILE_PATCHLOG = "patchlog.txt";
 	
 	private final String configPath;
+	
+	private List<String> configErrors;
 
 	private WatchService watchService;
 	private Map<WatchKey, File> keyToDirMap;
@@ -93,7 +93,7 @@ public class Backend
 	}
 
 
-	public void start()
+	public boolean start()
 	{
 		boolean configValid = validateModConfig();
 
@@ -105,6 +105,8 @@ public class Backend
 			if (appConfig.getBoolean(SETTING_WATCH, true) && addFileWatchers())
 				startFileWatch();
 		}
+		
+		return configValid;
 	}
 
 
@@ -117,6 +119,12 @@ public class Backend
 	public ModConfig getModConfig()
 	{
 		return modConfig;
+	}
+	
+	
+	public List<String> getConfigErrors()
+	{
+		return configErrors;
 	}
 	
 	
@@ -152,24 +160,20 @@ public class Backend
 
 	private boolean validateModConfig()
 	{
-		List<String> errors = modConfig.validate();
+		configErrors = modConfig.validate();
 
-		if (!errors.isEmpty())
+		if (!configErrors.isEmpty())
 		{
 			StringBuilder builder = new StringBuilder();
-			builder.append(String.format("The config contains %d errors:", errors.size()));
+			builder.append(String.format("The config contains %d errors:", configErrors.size()));
 
-			for (String error : errors)
+			for (String error : configErrors)
 				builder.append("\n" + error);
 
 			LogUtils.log(Level.ERROR, builder.toString());
-
-			//FIXME Don't show UI messages in the backend!
-			JOptionPane.showMessageDialog(null, builder.toString(), "Invalid config!",
-					JOptionPane.ERROR_MESSAGE);
 		}
 
-		return errors.isEmpty();
+		return configErrors.isEmpty();
 	}
 
 
