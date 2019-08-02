@@ -19,9 +19,13 @@
 package komposten.vivaldi.ui;
 
 import java.awt.Dimension;
+import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
+import komposten.utilities.logging.Level;
 import komposten.utilities.logging.LogUtils;
 
 public class VivaldiModderUI extends JFrame
@@ -34,7 +38,22 @@ public class VivaldiModderUI extends JFrame
 
 		LogUtils.writeToFile("log.txt");
 		
-		modPanel = new ModPanel(configPath);
+		checkConfigExists(configPath);
+		
+		try
+		{
+			modPanel = new ModPanel(configPath);
+		}
+		catch (IOException e)
+		{
+			String title = "Could not load the config!";
+			String msg = String.format("The config file (%s) could not be read!"
+					+ "%nReason: %s"
+					+ "%n%nThe program will exit.", configPath, e.getMessage());
+			LogUtils.log(Level.ERROR, getClass().getSimpleName(), title, e, false);
+			JOptionPane.showMessageDialog(null, msg, title, JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}
 		setContentPane(modPanel);
 		
 		pack();
@@ -45,11 +64,33 @@ public class VivaldiModderUI extends JFrame
 	}
 	
 	
+	private void checkConfigExists(String configPath)
+	{
+		File file = new File(configPath);
+		
+		if (!file.exists())
+		{
+			String title = "Could not load the config!";
+			String msg = String.format("The config file (%s) could not be found!"
+					+ "%nStarting with an empty config instead.", configPath);
+			JOptionPane.showMessageDialog(null, msg, title, JOptionPane.ERROR_MESSAGE);
+		}
+		else if (!file.isFile())
+		{
+			String title = "Could not load the config!";
+			String msg = String.format("The config file (%s) is not a file!"
+					+ "%nThe program will exit.", configPath);
+			JOptionPane.showMessageDialog(null, msg, title, JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}
+	}
+
+
 	public static void main(String[] args)
 	{
 		if (args.length > 0)
 			new VivaldiModderUI(args[0]);
 		else
-			new VivaldiModderUI(null);
+			new VivaldiModderUI("config.ini");
 	}
 }

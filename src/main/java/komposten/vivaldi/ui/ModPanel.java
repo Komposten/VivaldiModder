@@ -74,7 +74,10 @@ public class ModPanel extends JPanel
 	private EditInstructionDialog editDialog;
 	private VivaldiDirectoryDialog vivaldiDialog;
 
-	public ModPanel(String configPath)
+	/**
+	 * @throws IOException If an I/O error occurred while reading the config file.
+	 */
+	public ModPanel(String configPath) throws IOException
 	{
 		super(new GridBagLayout());
 
