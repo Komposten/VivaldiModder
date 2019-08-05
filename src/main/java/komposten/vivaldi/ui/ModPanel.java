@@ -240,9 +240,8 @@ public class ModPanel extends JPanel
 		if (showEditDialog(null) == EditInstructionDialog.RESULT_OK)
 		{
 			Instruction instruction = editDialog.getInstruction();
-			File modFile = new File(fieldModDir.getTextfield().getText(), instruction.sourceFile);
 			
-			if (modFile.isDirectory())
+			if (isModFileDirectory(instruction))
 			{
 				addDirectoryInstruction(instruction, editDialog.getOnlyFolderContent(),
 						editDialog.getIncludeSubfolders());
@@ -252,6 +251,13 @@ public class ModPanel extends JPanel
 				instructionsTable.addInstruction(instruction);
 			}
 		}
+	}
+
+
+	private boolean isModFileDirectory(Instruction instruction)
+	{
+		File modFile = new File(fieldModDir.getTextfield().getText(), instruction.sourceFile);
+		return modFile.isDirectory();
 	}
 
 
@@ -339,16 +345,32 @@ public class ModPanel extends JPanel
 		if (editDialog == null)
 			editDialog = new EditInstructionDialog(SwingUtilities.getWindowAncestor(this));
 		
-		
 		if (showEditDialog(instruction) == EditInstructionDialog.RESULT_OK)
-			instructionsTable.replaceInstruction(instruction, editDialog.getInstruction());
+		{
+			Instruction newInstruction = editDialog.getInstruction();
+			
+			if (isModFileDirectory(newInstruction))
+			{
+				removeInstructions(instruction);
+				addDirectoryInstruction(newInstruction, editDialog.getOnlyFolderContent(),
+						editDialog.getIncludeSubfolders());
+			}
+			else
+			{
+				instructionsTable.replaceInstruction(instruction, newInstruction);
+			}
+		}
 	}
 
 
 	private void removeSelectedInstructions()
 	{
-		Instruction[] instructions = instructionsTable.getSelectedInstructions();
-
+		removeInstructions(instructionsTable.getSelectedInstructions());
+	}
+	
+	
+	private void removeInstructions(Instruction... instructions)
+	{
 		if (instructions.length > 0)
 			instructionsTable.removeInstructions(instructions);
 	}
