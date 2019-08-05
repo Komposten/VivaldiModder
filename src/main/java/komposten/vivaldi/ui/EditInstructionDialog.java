@@ -87,7 +87,7 @@ public class EditInstructionDialog extends JDialog
 		checkOnlyFolderContent.setToolTipText(Strings.EDIT_INSTRUCTION_FOLDER_CONTENT);
 		checkIncludeSubfolders.setToolTipText(Strings.EDIT_INSTRUCTION_INCLUDE_SUBFOLDERS);
 		
-		fieldTarget.setPreferredSize(new Dimension(340, fieldTarget.getPreferredSize().height));
+		fieldTarget.setPreferredSize(new Dimension(440, fieldTarget.getPreferredSize().height));
 		
 		fieldMod.setBrowseListener(this::onModFileSelected);
 		fieldMod.getTextfield().addFocusListener(focusListener);
@@ -135,6 +135,7 @@ public class EditInstructionDialog extends JDialog
 		add(panelButtons, constraints);
 		
 		pack();
+		setResizable(false);
 		setLocationRelativeTo(owner);
 	}
 	
