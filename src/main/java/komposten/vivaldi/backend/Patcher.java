@@ -280,7 +280,9 @@ public class Patcher
 
 
 	/**
-	 * @return A list of all instructions that were backed up successfully.
+	 * @return A list of all instructions that were backed up successfully,
+	 *         already had backups, or did not exist (and where thus not in need
+	 *         of being backed up).
 	 */
 	private List<Instruction> backupFiles(File versionDir)
 	{
@@ -294,18 +296,15 @@ public class Patcher
 			File targetFile = new File(targetDir, sourceFile.getName());
 			File backupFile = new File(targetDir, sourceFile.getName() + ".bak");
 			
-			if (targetFile.exists())
+			if (targetFile.exists() && !backupFile.exists())
 			{
-				if (!backupFile.exists())
-				{
-					anyNeededBackup = true;
-					if (backupFile(targetFile, backupFile, versionDir))
-						instructions.add(instruction);
-				}
-				else
-				{
+				anyNeededBackup = true;
+				if (backupFile(targetFile, backupFile, versionDir))
 					instructions.add(instruction);
-				}
+			}
+			else
+			{
+				instructions.add(instruction);
 			}
 		}
 		
