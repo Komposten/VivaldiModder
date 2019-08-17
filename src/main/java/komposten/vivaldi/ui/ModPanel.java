@@ -23,6 +23,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Desktop.Action;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -446,7 +447,24 @@ public class ModPanel extends JPanel
 
 				try
 				{
-					Desktop.getDesktop().edit(file);
+					boolean supported = true;
+					
+					if (Desktop.isDesktopSupported())
+					{
+						if (Desktop.getDesktop().isSupported(Action.EDIT))
+							Desktop.getDesktop().edit(file);
+						else if (Desktop.getDesktop().isSupported(Action.OPEN))
+							Desktop.getDesktop().open(file);
+						else
+							supported = false;
+					}
+					else
+					{
+						supported = false;
+					}
+					
+					if (!supported)
+						throw new UnsupportedOperationException("The current platform does not support open/edit actions!");
 				}
 				catch (IllegalArgumentException e)
 				{
@@ -455,7 +473,7 @@ public class ModPanel extends JPanel
 					JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(ModPanel.this),
 							msg, title, JOptionPane.ERROR_MESSAGE);
 				}
-				catch (IOException e)
+				catch (IOException | UnsupportedOperationException e)
 				{
 					String title = "Failed to open file editor!";
 					String msg = "The file editor could not be opened!\nReason: " + e.getMessage();
